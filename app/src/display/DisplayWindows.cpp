@@ -148,6 +148,10 @@ void DisplayWindows::CreateBuffers()
     m_color_buffers[1] = malloc(m_buffer_size);
     m_depth_buffers[0] = malloc(m_buffer_size);
     m_depth_buffers[1] = malloc(m_buffer_size);
+    memset(m_color_buffers[0], 0, m_buffer_size);
+    memset(m_color_buffers[1], 0, m_buffer_size);
+    memset(m_depth_buffers[0], 0, m_buffer_size);
+    memset(m_depth_buffers[1], 0, m_buffer_size);
 
     set_default_buffers(m_color_buffers[m_front_buffer], m_depth_buffers[m_front_buffer], m_width, m_height);
 

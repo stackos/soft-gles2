@@ -24,6 +24,9 @@ class Renderer
 public:
     Renderer()
     {
+        glViewport(0, 0, 1280, 720);
+        glClearColor(1, 0, 0, 1);
+        glClearDepthf(1);
     }
 
     virtual ~Renderer()
@@ -32,11 +35,7 @@ public:
 
     void Draw()
     {
-        glClearColor(1, 0, 0, 1);
-        glClearDepthf(1);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        // to do:
-        // glViewport
     }
 };
 
@@ -48,7 +47,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     while(display->ProcessSystemEvents())
     {
         renderer->Draw();
-
         display->SwapBuffers();
     }
 
