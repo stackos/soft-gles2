@@ -39,6 +39,7 @@ public:
     }
 };
 
+#if 0
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShowCmd)
 {
     DisplayWindows* display = new DisplayWindows("soft-gles2", 1280, 720);
@@ -55,3 +56,4 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
     return 0;
 }
+#endif

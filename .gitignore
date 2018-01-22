@@ -4,6 +4,7 @@
 *.ipdb
 *.ilk
 *.pdb
+*.obj
 *.tmp
 *.iml
 *.mp4
