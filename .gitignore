@@ -1,0 +1,24 @@
+*.db
+*.cache
+*.iobj
+*.ipdb
+*.ilk
+*.pdb
+*.tmp
+*.iml
+*.mp4
+local.properties
+app.exe
+viry3d.lib
+build
+.vs
+.gradle
+.idea
+Debug
+Release
+AppScene
+unity/Library
+unity/Temp
+export out
+export out.meta
+.DS_Store

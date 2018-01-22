@@ -1,0 +1,117 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="src">
+      <UniqueIdentifier>{4d8ef9b2-5c49-42ad-8fe6-8da03fb1d355}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\math">
+      <UniqueIdentifier>{891608a4-211b-41d1-982d-cdc4be40e377}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\string">
+      <UniqueIdentifier>{e13da72b-729f-451c-bdc4-c8e146e971c5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\memory">
+      <UniqueIdentifier>{497e7438-0d75-4a63-8581-9a5fd5b91f01}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\container">
+      <UniqueIdentifier>{94b85a07-c086-40d8-8645-6c9fc7247f1c}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\src\GLContext.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\math\Bounds.cpp">
+      <Filter>src\math</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\math\Frustum.cpp">
+      <Filter>src\math</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\math\Mathf.cpp">
+      <Filter>src\math</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\math\Matrix4x4.cpp">
+      <Filter>src\math</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\math\Quaternion.cpp">
+      <Filter>src\math</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\math\Ray.cpp">
+      <Filter>src\math</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\math\Rect.cpp">
+      <Filter>src\math</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\math\Vector2.cpp">
+      <Filter>src\math</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\math\Vector3.cpp">
+      <Filter>src\math</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\string\String.cpp">
+      <Filter>src\string</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\memory\ByteBuffer.cpp">
+      <Filter>src\memory</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\src\math\Bounds.h">
+      <Filter>src\math</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\math\Frustum.h">
+      <Filter>src\math</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\math\Mathf.h">
+      <Filter>src\math</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\math\Matrix4x4.h">
+      <Filter>src\math</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\math\Quaternion.h">
+      <Filter>src\math</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\math\Ray.h">
+      <Filter>src\math</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\math\Rect.h">
+      <Filter>src\math</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\math\Vector2.h">
+      <Filter>src\math</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\math\Vector3.h">
+      <Filter>src\math</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\math\Vector4.h">
+      <Filter>src\math</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\string\String.h">
+      <Filter>src\string</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\memory\ByteBuffer.h">
+      <Filter>src\memory</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\memory\Memory.h">
+      <Filter>src\memory</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\memory\Ref.h">
+      <Filter>src\memory</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\container\FastList.h">
+      <Filter>src\container</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\container\List.h">
+      <Filter>src\container</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\container\Map.h">
+      <Filter>src\container</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\container\Vector.h">
+      <Filter>src\container</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\container\Array.h">
+      <Filter>src\container</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>

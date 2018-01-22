@@ -1,0 +1,24 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="src">
+      <UniqueIdentifier>{7ca5b2a9-cf9b-466d-b8cc-27eb97308f91}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\display">
+      <UniqueIdentifier>{5ecfc85c-403c-4692-abbf-3112cfc29c11}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\src\AppClear.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\display\DisplayWindows.cpp">
+      <Filter>src\display</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\src\display\DisplayWindows.h">
+      <Filter>src\display</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>
