@@ -18,43 +18,69 @@
 #include <Windows.h>
 #include "display/DisplayWindows.h"
 #include "GLES2/gl2.h"
+#include <string>
+
+void exec_cmd(const std::string& path, const std::string& exe, const std::string& param)
+{
+    STARTUPINFO si;
+    ZeroMemory(&si, sizeof(si));
+    si.cb = sizeof(si);
+    si.dwFlags = STARTF_USESHOWWINDOW;
+    si.wShowWindow = SW_HIDE;
+
+    PROCESS_INFORMATION pi;
+    ZeroMemory(&pi, sizeof(pi));
+
+    std::string cmd = "\"" + path + "\\" + exe + "\" " + param;
+
+    if (CreateProcess(
+        NULL,
+        (LPSTR) cmd.c_str(),    // Command line
+        NULL,           // Process handle not inheritable
+        NULL,           // Thread handle not inheritable
+        FALSE,          // Set handle inheritance to FALSE
+        0,              // No creation flags
+        NULL,           // Use parent's environment block
+        NULL,           // Use parent's starting directory 
+        &si,            // Pointer to STARTUPINFO structure
+        &pi))
+    {
+        // Wait until child process exits.
+        WaitForSingleObject(pi.hProcess, INFINITE);
+
+        // Close process and thread handles. 
+        CloseHandle(pi.hProcess);
+        CloseHandle(pi.hThread);
+    }
+}
 
 class Renderer
 {
 public:
     Renderer()
     {
-        STARTUPINFO si;
-        ZeroMemory(&si, sizeof(si));
-        si.cb = sizeof(si);
-        si.dwFlags = STARTF_USESHOWWINDOW;
-        si.wShowWindow = SW_HIDE;
+        std::string cl_dir = "C:\\Program Files (x86)\\Microsoft Visual Studio\\2017\\Community\\VC\\Tools\\MSVC\\14.12.25827\\bin\\Hostx64\\x64";
+        exec_cmd(cl_dir, "cl.exe", "/c test.cpp "
+            "/I \"C:\\Program Files (x86)\\Microsoft Visual Studio\\2017\\Community\\VC\\Tools\\MSVC\\14.12.25827\\include\" "
+            "/I \"C:\\Program Files (x86)\\Windows Kits\\10\\Include\\10.0.16299.0\\ucrt\"");
+        exec_cmd(cl_dir, "link.exe", "/dll test.obj /OUT:test.dll "
+            "/LIBPATH:\"C:\\Program Files (x86)\\Microsoft Visual Studio\\2017\\Community\\VC\\Tools\\MSVC\\14.12.25827\\lib\\x64\" "
+            "/LIBPATH:\"C:\\Program Files (x86)\\Windows Kits\\10\\lib\\10.0.16299.0\\um\\x64\" "
+            "/LIBPATH:\"C:\\Program Files (x86)\\Windows Kits\\10\\lib\\10.0.16299.0\\ucrt\\x64\"");
 
-        PROCESS_INFORMATION pi;
-        ZeroMemory(&pi, sizeof(pi));
-        
-        // cl /c test.c
-        // link /dll test.obj
-        if (CreateProcess(
-            NULL,
-            (LPSTR) "\"C:\\Program Files (x86)\\Microsoft Visual Studio\\2017\\Community\\VC\\Tools\\MSVC\\14.12.25827\\bin\\Hostx64\\x64\\cl.exe\" /c test.c",           // Command line
-            NULL,           // Process handle not inheritable
-            NULL,           // Thread handle not inheritable
-            FALSE,          // Set handle inheritance to FALSE
-            0,              // No creation flags
-            NULL,           // Use parent's environment block
-            NULL,           // Use parent's starting directory 
-            &si,            // Pointer to STARTUPINFO structure
-            &pi))
+        auto dll = LoadLibrary("test.dll");
+        if (dll)
         {
-            // Wait until child process exits.
-            WaitForSingleObject(pi.hProcess, INFINITE);
-
-            // Close process and thread handles. 
-            CloseHandle(pi.hProcess);
-            CloseHandle(pi.hThread);
+            typedef void(*Func)(char*, int);
+            Func hello = (Func) GetProcAddress(dll, "hello");
+            if (hello)
+            {
+                char buffer[1024];
+                hello(buffer, 1024);
+                MessageBox(NULL, buffer, "", MB_OK);
+            }
+            FreeLibrary(dll);
         }
-
         //
         //to do: glCreateShader
     }

@@ -26,3 +26,6 @@ export out.meta
 soft-gles2.dll
 soft-gles2.exp
 soft-gles2.lib
+test.dll
+test.exp
+test.lib
