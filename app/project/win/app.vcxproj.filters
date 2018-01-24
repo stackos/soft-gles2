@@ -7,6 +7,15 @@
     <Filter Include="src\display">
       <UniqueIdentifier>{5ecfc85c-403c-4692-abbf-3112cfc29c11}</UniqueIdentifier>
     </Filter>
+    <Filter Include="src\math">
+      <UniqueIdentifier>{8c2f4f44-bb59-472c-9656-646dc7cc2c89}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\string">
+      <UniqueIdentifier>{30de794c-7a84-42d7-930d-391737d57b2e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\memory">
+      <UniqueIdentifier>{91343870-a911-4bc8-843a-92d94be06c2b}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\src\AppClear.cpp">
@@ -21,10 +30,85 @@
     <ClCompile Include="..\..\bin\test.cpp">
       <Filter>src</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\lib\src\math\Bounds.cpp">
+      <Filter>src\math</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\lib\src\math\Frustum.cpp">
+      <Filter>src\math</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\lib\src\math\Mathf.cpp">
+      <Filter>src\math</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\lib\src\math\Matrix4x4.cpp">
+      <Filter>src\math</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\lib\src\math\Quaternion.cpp">
+      <Filter>src\math</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\lib\src\math\Ray.cpp">
+      <Filter>src\math</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\lib\src\math\Rect.cpp">
+      <Filter>src\math</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\lib\src\math\Vector2.cpp">
+      <Filter>src\math</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\lib\src\math\Vector3.cpp">
+      <Filter>src\math</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\lib\src\string\String.cpp">
+      <Filter>src\string</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\lib\src\memory\ByteBuffer.cpp">
+      <Filter>src\memory</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\src\display\DisplayWindows.h">
       <Filter>src\display</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\lib\src\math\Bounds.h">
+      <Filter>src\math</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\lib\src\math\Frustum.h">
+      <Filter>src\math</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\lib\src\math\Mathf.h">
+      <Filter>src\math</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\lib\src\math\Matrix4x4.h">
+      <Filter>src\math</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\lib\src\math\Quaternion.h">
+      <Filter>src\math</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\lib\src\math\Ray.h">
+      <Filter>src\math</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\lib\src\math\Rect.h">
+      <Filter>src\math</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\lib\src\math\Vector2.h">
+      <Filter>src\math</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\lib\src\math\Vector3.h">
+      <Filter>src\math</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\lib\src\math\Vector4.h">
+      <Filter>src\math</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\lib\src\string\String.h">
+      <Filter>src\string</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\lib\src\memory\ByteBuffer.h">
+      <Filter>src\memory</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\lib\src\memory\Memory.h">
+      <Filter>src\memory</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\lib\src\memory\Ref.h">
+      <Filter>src\memory</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

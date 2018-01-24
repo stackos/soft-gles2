@@ -1,3 +1,4 @@
+#include <memory.h>
 #define DLL_EXPORT extern "C" _declspec(dllexport)
 #define uniform
 #define attribute
@@ -24,7 +25,7 @@ struct vec4
         };
     };
 
-    vec4(float x = 0, float y = 0, float z = 0, float w = 0):
+    vec4(float x = 0, float y = 0, float z = 0, float w = 1):
         x(x),
         y(y),
         z(z),
@@ -61,9 +62,9 @@ void main()
 //
 
 #define VS_VAR_SETTER(type, var) \
-    DLL_EXPORT void set_##var(void* p) \
+    DLL_EXPORT void set_##var(void* p, int size) \
     { \
-        var = *(type*) p; \
+        memcpy(&var, p, size); \
     }
 #define VS_VAR_GETTER(type, var) \
     DLL_EXPORT void* get_##var() \

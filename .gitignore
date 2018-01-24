@@ -24,6 +24,7 @@ unity/Temp
 export out
 export out.meta
 .DS_Store
+app.lib
 soft-gles2.dll
 soft-gles2.exp
 soft-gles2.lib

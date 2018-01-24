@@ -19,12 +19,37 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\..\lib\src\math\Bounds.cpp" />
+    <ClCompile Include="..\..\..\lib\src\math\Frustum.cpp" />
+    <ClCompile Include="..\..\..\lib\src\math\Mathf.cpp" />
+    <ClCompile Include="..\..\..\lib\src\math\Matrix4x4.cpp" />
+    <ClCompile Include="..\..\..\lib\src\math\Quaternion.cpp" />
+    <ClCompile Include="..\..\..\lib\src\math\Ray.cpp" />
+    <ClCompile Include="..\..\..\lib\src\math\Rect.cpp" />
+    <ClCompile Include="..\..\..\lib\src\math\Vector2.cpp" />
+    <ClCompile Include="..\..\..\lib\src\math\Vector3.cpp" />
+    <ClCompile Include="..\..\..\lib\src\memory\ByteBuffer.cpp" />
+    <ClCompile Include="..\..\..\lib\src\string\String.cpp" />
     <ClCompile Include="..\..\bin\test.cpp" />
     <ClCompile Include="..\..\src\AppClear.cpp" />
     <ClCompile Include="..\..\src\AppShader.cpp" />
     <ClCompile Include="..\..\src\display\DisplayWindows.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\..\lib\src\math\Bounds.h" />
+    <ClInclude Include="..\..\..\lib\src\math\Frustum.h" />
+    <ClInclude Include="..\..\..\lib\src\math\Mathf.h" />
+    <ClInclude Include="..\..\..\lib\src\math\Matrix4x4.h" />
+    <ClInclude Include="..\..\..\lib\src\math\Quaternion.h" />
+    <ClInclude Include="..\..\..\lib\src\math\Ray.h" />
+    <ClInclude Include="..\..\..\lib\src\math\Rect.h" />
+    <ClInclude Include="..\..\..\lib\src\math\Vector2.h" />
+    <ClInclude Include="..\..\..\lib\src\math\Vector3.h" />
+    <ClInclude Include="..\..\..\lib\src\math\Vector4.h" />
+    <ClInclude Include="..\..\..\lib\src\memory\ByteBuffer.h" />
+    <ClInclude Include="..\..\..\lib\src\memory\Memory.h" />
+    <ClInclude Include="..\..\..\lib\src\memory\Ref.h" />
+    <ClInclude Include="..\..\..\lib\src\string\String.h" />
     <ClInclude Include="..\..\src\display\DisplayWindows.h" />
   </ItemGroup>
   <ItemGroup>
