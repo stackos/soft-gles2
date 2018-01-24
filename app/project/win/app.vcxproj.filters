@@ -18,6 +18,9 @@
     <ClCompile Include="..\..\src\AppShader.cpp">
       <Filter>src</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\bin\test.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\src\display\DisplayWindows.h">

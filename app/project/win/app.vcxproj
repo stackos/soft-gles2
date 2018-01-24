@@ -19,6 +19,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\bin\test.cpp" />
     <ClCompile Include="..\..\src\AppClear.cpp" />
     <ClCompile Include="..\..\src\AppShader.cpp" />
     <ClCompile Include="..\..\src\display\DisplayWindows.cpp" />
