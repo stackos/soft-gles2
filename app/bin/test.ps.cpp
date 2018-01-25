@@ -89,11 +89,12 @@ static vec4 texture2D(const sampler2D& sampler, const vec2& uv)
 uniform sampler2D u_tex;
 
 varying vec2 v_uv;
+varying vec4 v_color;
 
 DLL_EXPORT
 void ps_main()
 {
-    gl_FragColor = texture2D(u_tex, v_uv);
+    gl_FragColor = texture2D(u_tex, v_uv) * v_color;
 }
 //
 // shader end
@@ -114,4 +115,5 @@ void ps_main()
 
 UNIFORM_SETTER(u_tex)
 VARYING_SETTER(v_uv)
+VARYING_SETTER(v_color)
 VAR_GETTER(gl_FragColor)

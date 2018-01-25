@@ -75,14 +75,17 @@ static vec4 gl_Position;
 //
 attribute vec4 a_position;
 attribute vec2 a_uv;
+attribute vec4 a_color;
 
 varying vec2 v_uv;
+varying vec4 v_color;
 
 DLL_EXPORT
 void vs_main()
 {
     gl_Position = a_position;
     v_uv = a_uv;
+    v_color = a_color;
 }
 //
 // shader end
@@ -104,5 +107,7 @@ void vs_main()
 
 ATTRIBUTE_SETTER(a_position)
 ATTRIBUTE_SETTER(a_uv)
+ATTRIBUTE_SETTER(a_color)
 VAR_GETTER(gl_Position)
 VARYING_GETTER(v_uv)
+VARYING_GETTER(v_color)

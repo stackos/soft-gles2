@@ -21,7 +21,48 @@
 #include "math/Mathf.h"
 #include <memory>
 
+#include "math/Vector2.h"
+#include "math/Vector3.h"
+#include "math/Vector4.h"
+#include "math/Matrix4x4.h"
+#include <Windows.h>
+#include <string>
+
 using namespace Viry3D;
+
+void exec_cmd(const std::string& path, const std::string& exe, const std::string& param)
+{
+    STARTUPINFO si;
+    ZeroMemory(&si, sizeof(si));
+    si.cb = sizeof(si);
+    si.dwFlags = STARTF_USESHOWWINDOW;
+    si.wShowWindow = SW_HIDE;
+
+    PROCESS_INFORMATION pi;
+    ZeroMemory(&pi, sizeof(pi));
+
+    std::string cmd = "\"" + path + "\\" + exe + "\" " + param;
+
+    if (CreateProcess(
+        NULL,
+        (LPSTR) cmd.c_str(),    // Command line
+        NULL,           // Process handle not inheritable
+        NULL,           // Thread handle not inheritable
+        FALSE,          // Set handle inheritance to FALSE
+        0,              // No creation flags
+        NULL,           // Use parent's environment block
+        NULL,           // Use parent's starting directory 
+        &si,            // Pointer to STARTUPINFO structure
+        &pi))
+    {
+        // Wait until child process exits.
+        WaitForSingleObject(pi.hProcess, INFINITE);
+
+        // Close process and thread handles. 
+        CloseHandle(pi.hProcess);
+        CloseHandle(pi.hThread);
+    }
+}
 
 class GLContext
 {
@@ -101,6 +142,178 @@ public:
         }
     }
 
+    void SetPixel(int x, int y, float r, float g, float b, float a)
+    {
+        m_default_color_buffer[y * m_default_buffer_width * 4 + x * 4 + 0] = FloatToColorByte(r);
+        m_default_color_buffer[y * m_default_buffer_width * 4 + x * 4 + 1] = FloatToColorByte(g);
+        m_default_color_buffer[y * m_default_buffer_width * 4 + x * 4 + 2] = FloatToColorByte(b);
+        m_default_color_buffer[y * m_default_buffer_width * 4 + x * 4 + 3] = FloatToColorByte(a);
+    }
+
+    void DrawTriangle(Vector4* pos, Vector2* uv, Vector4* color)
+    {
+        for (int i = 0; i < 3; ++i)
+        {
+            Vector4 p = pos[i] / pos[i].w;
+            int x = (int) ((p.x * 0.5f + 0.5f) * m_default_buffer_width);
+            int y = (int) ((p.y * 0.5f + 0.5f) * m_default_buffer_height);
+
+            SetPixel(x, y, color[i].x, color[i].y, color[i].z, color[i].w);
+        }
+
+        Vector4 a = pos[0];
+        Vector4 b = pos[1];
+        Vector4 c = pos[2];
+
+        Vector4 pa = a / a.w;
+        Vector4 pb = b / b.w;
+        Vector4 pc = c / c.w;
+
+        if (pa.y > pb.y)
+        {
+            std::swap(a, b);
+            std::swap(pa, pb);
+        }
+        if (pb.y > pc.y)
+        {
+            std::swap(b, c);
+            std::swap(pb, pc);
+        }
+        if (pa.y > pb.y)
+        {
+            std::swap(a, b);
+            std::swap(pa, pb);
+        }
+
+        /*
+                     pc
+
+            pb     pd
+
+                pa
+        */
+
+        Vector4 pd(0, pb.y, 0, 0);
+        pd.x = pc.x - (pc.y - pd.y) * (pc.x - pa.x) / (pc.y - pa.y);
+
+        const float step_y = 2.0f / m_default_buffer_height;
+
+        // up scan
+        float y = pd.y;
+        while (y <= pc.y)
+        {
+            float x1 = pc.x - (pc.y - y) * (pc.x - pd.x) / (pc.y - pd.y);
+            float x2 = pc.x - (pc.y - y) * (pc.x - pb.x) / (pc.y - pb.y);
+            SetPixel((int) ((x1 * 0.5f + 0.5f) * m_default_buffer_width), (int) ((y * 0.5f + 0.5f) * m_default_buffer_height), 1, 1, 1, 1);
+            SetPixel((int) ((x2 * 0.5f + 0.5f) * m_default_buffer_width), (int) ((y * 0.5f + 0.5f) * m_default_buffer_height), 1, 1, 1, 1);
+            y += step_y;
+        }
+
+        // down scan
+        y = pd.y - step_y;
+        while (y >= pa.y)
+        {
+            float x1 = pa.x - (pa.y - y) * (pa.x - pd.x) / (pa.y - pd.y);
+            float x2 = pa.x - (pa.y - y) * (pa.x - pb.x) / (pa.y - pb.y);
+            SetPixel((int) ((x1 * 0.5f + 0.5f) * m_default_buffer_width), (int) ((y * 0.5f + 0.5f) * m_default_buffer_height), 1, 1, 1, 1);
+            SetPixel((int) ((x2 * 0.5f + 0.5f) * m_default_buffer_width), (int) ((y * 0.5f + 0.5f) * m_default_buffer_height), 1, 1, 1, 1);
+            y -= step_y;
+        }
+    }
+
+    HMODULE dll = nullptr;
+
+    void DrawTest()
+    {
+        if (dll == nullptr)
+        {
+            std::string vs_path = "C:\\Program Files (x86)\\Microsoft Visual Studio\\2017\\Community";
+            //std::string vs_path = "D:\\Program\\VS2017";
+
+            std::string cl_dir = vs_path + "\\VC\\Tools\\MSVC\\14.12.25827\\bin\\Hostx64\\x64";
+            exec_cmd(cl_dir, "cl.exe", "/c test.vs.cpp test.ps.cpp "
+                "/I \"" + vs_path + "\\VC\\Tools\\MSVC\\14.12.25827\\include\" "
+                "/I \"C:\\Program Files (x86)\\Windows Kits\\10\\Include\\10.0.16299.0\\ucrt\"");
+            exec_cmd(cl_dir, "link.exe", "/dll test.vs.obj test.ps.obj /OUT:test.dll "
+                "/LIBPATH:\"" + vs_path + "\\VC\\Tools\\MSVC\\14.12.25827\\lib\\x64\" "
+                "/LIBPATH:\"C:\\Program Files (x86)\\Windows Kits\\10\\lib\\10.0.16299.0\\um\\x64\" "
+                "/LIBPATH:\"C:\\Program Files (x86)\\Windows Kits\\10\\lib\\10.0.16299.0\\ucrt\\x64\"");
+
+            dll = LoadLibrary("test.dll");
+        }
+        
+        if (dll)
+        {
+            struct Vertex
+            {
+                Vector3 pos;
+                Vector2 uv;
+                Vector4 color;
+            };
+
+            Matrix4x4 view = Matrix4x4::LookTo(
+                Vector3(0, 1, -2),
+                Vector3(0, 0, 1),
+                Vector3(0, 1, 0));
+            Matrix4x4 proj = Matrix4x4::Perspective(60, 1280 / 720.0f, 0.3f, 1000);
+            Matrix4x4 vp = proj * view;
+
+            Vertex vertices[3] = {
+                { Vector3(-1, 0, 2), Vector2(0, 0), Vector4(1, 0, 0, 1) },
+                { Vector3(-1, 0, 1), Vector2(0, 1), Vector4(0, 1, 0, 1) },
+                { Vector3(1, 0, 0), Vector2(1, 1), Vector4(0, 0, 1, 1) },
+            };
+            unsigned short indices[3] = { 0, 1, 2 };
+
+            Vector4 gl_position[3];
+            Vector2 v_uv[3];
+            Vector4 v_color[3];
+
+            typedef void*(*VarGetter)();
+            typedef void(*VarSetter)(void*, int);
+            typedef void(*Main)();
+
+            VarSetter set_a_position = (VarSetter) GetProcAddress(dll, "set_a_position");
+            VarSetter set_a_uv = (VarSetter) GetProcAddress(dll, "set_a_uv");
+            VarSetter set_a_color = (VarSetter) GetProcAddress(dll, "set_a_color");
+            Main vs_main = (Main) GetProcAddress(dll, "vs_main");
+            VarGetter get_gl_Position = (VarGetter) GetProcAddress(dll, "get_gl_Position");
+            VarGetter get_v_uv = (VarGetter) GetProcAddress(dll, "get_v_uv");
+            VarGetter get_v_color = (VarGetter) GetProcAddress(dll, "get_v_color");
+
+            if (vs_main)
+            {
+                for (int i = 0; i < 3; ++i)
+                {
+                    unsigned short index = indices[i];
+
+                    Vector4 pos = vp * Vector4(vertices[index].pos, 1);
+
+                    set_a_position(&pos, sizeof(Vector4));
+                    set_a_uv(&vertices[index].uv, sizeof(Vector2));
+                    set_a_color(&vertices[index].color, sizeof(Vector4));
+
+                    vs_main();
+
+                    gl_position[i] = *(Vector4*) get_gl_Position();
+                    v_uv[i] = *(Vector2*) get_v_uv();
+                    v_color[i] = *(Vector4*) get_v_color();
+                }
+            }
+
+            VarSetter set_u_tex = (VarSetter) GetProcAddress(dll, "set_u_tex");
+            VarSetter set_v_uv = (VarSetter) GetProcAddress(dll, "set_v_uv");
+            VarSetter set_v_color = (VarSetter) GetProcAddress(dll, "set_v_color");
+            Main ps_main = (Main) GetProcAddress(dll, "ps_main");
+            VarGetter get_gl_FragColor = (VarGetter) GetProcAddress(dll, "get_gl_FragColor");
+
+            if (ps_main)
+            {
+                DrawTriangle(gl_position, v_uv, v_color);
+            }
+        }
+    }
+
     GLContext():
         m_default_color_buffer(nullptr),
         m_default_depth_buffer(nullptr),
@@ -120,6 +333,10 @@ public:
 
     ~GLContext()
     {
+        if (dll)
+        {
+            FreeLibrary(dll);
+        }
     }
 
 private:
@@ -171,4 +388,6 @@ void GL_APIENTRY glClearDepthf(GLfloat d)
 void GL_APIENTRY glClear(GLbitfield mask)
 {
     gl.Clear(mask);
+
+    gl.DrawTest();
 }
