@@ -27,9 +27,6 @@
     <ClCompile Include="..\..\src\AppShader.cpp">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\bin\test.cpp">
-      <Filter>src</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\lib\src\math\Bounds.cpp">
       <Filter>src\math</Filter>
     </ClCompile>
@@ -62,6 +59,12 @@
     </ClCompile>
     <ClCompile Include="..\..\..\lib\src\memory\ByteBuffer.cpp">
       <Filter>src\memory</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\bin\test.ps.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\bin\test.vs.cpp">
+      <Filter>src</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

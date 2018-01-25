@@ -1,8 +1,37 @@
 #include <memory.h>
 #define DLL_EXPORT extern "C" _declspec(dllexport)
-#define uniform
-#define attribute
-#define varying
+#define uniform static
+#define attribute static
+#define varying static
+
+struct vec2
+{
+    struct
+    {
+        float x;
+        float y;
+    };
+
+    vec2(float x = 0, float y = 0):
+        x(x),
+        y(y)
+    {
+    }
+};
+
+struct vec3
+{
+    float x;
+    float y;
+    float z;
+
+    vec3(float x = 0, float y = 0, float z = 0):
+        x(x),
+        y(y),
+        z(z)
+    {
+    }
+};
 
 struct vec4
 {
@@ -39,44 +68,41 @@ struct vec4
     }
 };
 
-vec4 gl_Position;
+static vec4 gl_Position;
 
 //
 // shader begin
 //
-uniform vec4 u_color;
-
 attribute vec4 a_position;
-attribute vec4 a_color;
+attribute vec2 a_uv;
 
-varying vec4 v_color;
+varying vec2 v_uv;
 
 DLL_EXPORT
-void main()
+void vs_main()
 {
     gl_Position = a_position;
-    v_color = a_color * u_color;
+    v_uv = a_uv;
 }
 //
 // shader end
 //
 
-#define VS_VAR_SETTER(type, var) \
+#define VAR_SETTER(var) \
     DLL_EXPORT void set_##var(void* p, int size) \
     { \
         memcpy(&var, p, size); \
     }
-#define VS_VAR_GETTER(type, var) \
+#define VAR_GETTER(var) \
     DLL_EXPORT void* get_##var() \
     { \
         return &var; \
     }
-#define VS_UNIFORM_SETTER VS_VAR_SETTER
-#define VS_ATTRIBUTE_SETTER VS_VAR_SETTER
-#define VS_VARYING_GETTER VS_VAR_GETTER
+#define UNIFORM_SETTER VAR_SETTER
+#define ATTRIBUTE_SETTER VAR_SETTER
+#define VARYING_GETTER VAR_GETTER
 
-VS_UNIFORM_SETTER(vec4, u_color)
-VS_ATTRIBUTE_SETTER(vec4, a_position)
-VS_ATTRIBUTE_SETTER(vec4, a_color)
-VS_VAR_GETTER(vec4, gl_Position)
-VS_VARYING_GETTER(vec4, v_color)
+ATTRIBUTE_SETTER(a_position)
+ATTRIBUTE_SETTER(a_uv)
+VAR_GETTER(gl_Position)
+VARYING_GETTER(v_uv)
