@@ -150,30 +150,106 @@ public:
         m_default_color_buffer[y * m_default_buffer_width * 4 + x * 4 + 3] = FloatToColorByte(a);
     }
 
-    void DrawScanLineTest(float x1, float x2, int y)
+    float ProjToScreenX(float x)
     {
-        int sx1 = ProjToScreenX(x1);
-        int sx2 = ProjToScreenX(x2);;
+        return (x * 0.5f + 0.5f) * m_default_buffer_width;
+    }
 
-        for (int i = sx1; i <= sx2; ++i)
+    float ProjToScreenY(float y)
+    {
+        return (y * 0.5f + 0.5f) * m_default_buffer_height;
+    }
+
+    bool IsTopLeftEdge(int x1, int y1, int x2, int y2)
+    {
+        return ((y2 > y1) || (y1 == y2 && x1 > x2));
+    }
+
+    void DrawLineTest(int x1, int y1, int x2, int y2)
+    {
+        if (x1 == x2)
         {
-            SetPixelTest(i, y, 1, 1, 1, 1);
+            int y = y1;
+            int step = y2 > y1 ? 1 : -1;
+            while (y != y2)
+            {
+                SetPixelTest(x1, y, 1, 1, 1, 1);
+                y += step;
+            }
+            SetPixelTest(x2, y2, 1, 1, 1, 1);
         }
-    }
+        else if (y1 == y2) // k == 0
+        {
+            int x = x1;
+            int step = x2 > x1 ? 1 : -1;
+            while (x != x2)
+            {
+                SetPixelTest(x, y1, 1, 1, 1, 1);
+                x += step;
+            }
+            SetPixelTest(x2, y2, 1, 1, 1, 1);
+        }
+        else
+        {
+            float k = fabs((y2 - y1) / (float) (x2 - x1));
 
-    int ProjToScreenX(float x)
-    {
-        return Mathf::RoundToInt((x * 0.5f + 0.5f) * m_default_buffer_width);
-    }
+            if (k < 1) // x step 1
+            {
+                int x = x1;
+                int y = y1;
+                int x_step = x2 > x1 ? 1 : -1;
+                int y_step = y2 > y1 ? 1 : -1;
+                float d = 0;
+                while (x != x2)
+                {
+                    if (d >= 0.5f)
+                    {
+                        SetPixelTest(x, y + y_step, 1, 1, 1, 1);
+                    }
+                    else
+                    {
+                        SetPixelTest(x, y, 1, 1, 1, 1);
+                    }
+                    
+                    x += x_step;
+                    d += k;
+                    if (d >= 1.0f)
+                    {
+                        d -= 1.0f;
+                        y += y_step;
+                    }
+                }
+                SetPixelTest(x2, y2, 1, 1, 1, 1);
+            }
+            else // y step 1
+            {
+                int x = x1;
+                int y = y1;
+                int x_step = x2 > x1 ? 1 : -1;
+                int y_step = y2 > y1 ? 1 : -1;
+                float d = 0;
+                while (y != y2)
+                {
+                    if (d >= 0.5f)
+                    {
+                        SetPixelTest(x + x_step, y, 1, 1, 1, 1);
+                    }
+                    else
+                    {
+                        SetPixelTest(x, y, 1, 1, 1, 1);
+                    }
 
-    int ProjToScreenY(float y)
-    {
-        return Mathf::RoundToInt((y * 0.5f + 0.5f) * m_default_buffer_height);
-    }
-
-    float ScreenToProjY(int y)
-    {
-        return y / (float) m_default_buffer_height * 2 - 1;
+                    y += y_step;
+                    d += k;
+                    if (d >= 1.0f)
+                    {
+                        d -= 1.0f;
+                        x += x_step;
+                    }
+                }
+                SetPixelTest(x2, y2, 1, 1, 1, 1);
+            }
+        }
     }
 
     void DrawTriangleTest(const Vector4* pos, const Vector2* uv, const Vector4* color)
@@ -214,43 +290,77 @@ public:
         pd.x = pc.x - (pc.y - pb.y) * (pc.x - pa.x) / (pc.y - pa.y);
         pd.y = pb.y;
 
-        const int step_y = 1; //2.0f / m_default_buffer_height;
+        // draw line pc->pd and pc->pb
+        {
+            int x1 = (int) ProjToScreenX(pc.x);
+            int y1 = (int) ProjToScreenY(pc.y);
+            int x2 = (int) ProjToScreenX(pd.x);
+            int y2 = (int) ProjToScreenY(pd.y);
+            int x3 = (int) ProjToScreenX(pb.x);
+            int y3 = (int) ProjToScreenY(pb.y);
 
-        // up scan
+            DrawLineTest(x1, y1, x2, y2);
+            DrawLineTest(x1, y1, x3, y3);
+        }
         
-        int center = ProjToScreenY(pd.y);
-        int y = center;
-        int top = ProjToScreenY(pc.y);
-        while (y <= top)
+        // draw line pa->pd and pa->pb
         {
-            float x1 = pc.x - (pc.y - ScreenToProjY(y)) * (pc.x - pd.x) / (pc.y - pd.y);
-            float x2 = pc.x - (pc.y - ScreenToProjY(y)) * (pc.x - pb.x) / (pc.y - pd.y);
-            if (x1 > x2)
-            {
-                std::swap(x1, x2);
-            }
+            int x1 = (int) ProjToScreenX(pa.x);
+            int y1 = (int) ProjToScreenY(pa.y);
+            int x2 = (int) ProjToScreenX(pd.x);
+            int y2 = (int) ProjToScreenY(pd.y);
+            int x3 = (int) ProjToScreenX(pb.x);
+            int y3 = (int) ProjToScreenY(pb.y);
 
-            DrawScanLineTest(x1, x2, y);
-            
-            y += step_y;
+            DrawLineTest(x1, y1, x2, y2);
+            DrawLineTest(x1, y1, x3, y3);
         }
 
-        // down scan
-        y = center - step_y;
-        int bottom = ProjToScreenY(pa.y);
-        while (y >= bottom)
+        /*
+        int TopLeftEdge(int x1, int y1, int x2, int y2)
         {
-            float x1 = pa.x - (pa.y - ScreenToProjY(y)) * (pa.x - pd.x) / (pa.y - pd.y);
-            float x2 = pa.x - (pa.y - ScreenToProjY(y)) * (pa.x - pb.x) / (pa.y - pd.y);
-            if (x1 > x2)
-            {
-                std::swap(x1, x2);
-            }
-
-            DrawScanLineTest(x1, x2, y);
-
-            y -= step_y;
+            return ((y2 > y1) || (y1 == y2 && x1 > x2)) ? 0 : -1;
         }
+
+        int EdgeEquation(int x, int y, int x1, int y1, int x2, int y2)
+        {
+            return (x2 - x1) * (y - y1) - (y2 - y1) * (x - x1) + TopLeftEdge(x1, y1, x2, y2);
+        }
+
+        void DrawTriangleTest(const Vector4* pos, const Vector2* uv, const Vector4* color)
+        {
+            Vector4 v1 = pos[0] / pos[0].w;
+            Vector4 v2 = pos[1] / pos[1].w;
+            Vector4 v3 = pos[2] / pos[2].w;
+
+            int x1 = (int) ProjToScreenX(v1.x);
+            int x2 = (int) ProjToScreenX(v2.x);
+            int x3 = (int) ProjToScreenX(v3.x);
+
+            int y1 = (int) ProjToScreenY(v1.y);
+            int y2 = (int) ProjToScreenY(v2.y);
+            int y3 = (int) ProjToScreenY(v3.y);
+
+            int minx = Mathf::Min(Mathf::Min(x1, x2), x3);
+            int maxx = Mathf::Max(Mathf::Max(x1, x2), x3);
+            int miny = Mathf::Min(Mathf::Min(y1, y2), y3);
+            int maxy = Mathf::Max(Mathf::Max(y1, y2), y3);
+
+            for (int y = miny; y < maxy; y++)
+            {
+                for (int x = minx; x < maxx; x++)
+                {
+                    int w1 = EdgeEquation(x, y, x1, y1, x2, y2);
+                    int w2 = EdgeEquation(x, y, x2, y2, x3, y3);
+                    int w3 = EdgeEquation(x, y, x3, y3, x1, y1);
+
+                    if (w1 >= 0 && w2 >= 0 && w3 >= 0)
+                    {
+                        SetPixelTest(x, y, 1, 1, 1, 1);
+                    }
+                }
+            }
+        }*/
     }
 
     HMODULE dll = nullptr;
