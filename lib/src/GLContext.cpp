@@ -142,7 +142,7 @@ public:
         }
     }
 
-    void SetPixel(int x, int y, float r, float g, float b, float a)
+    void SetPixelTest(int x, int y, float r, float g, float b, float a)
     {
         m_default_color_buffer[y * m_default_buffer_width * 4 + x * 4 + 0] = FloatToColorByte(r);
         m_default_color_buffer[y * m_default_buffer_width * 4 + x * 4 + 1] = FloatToColorByte(g);
@@ -150,17 +150,34 @@ public:
         m_default_color_buffer[y * m_default_buffer_width * 4 + x * 4 + 3] = FloatToColorByte(a);
     }
 
-    void DrawTriangle(Vector4* pos, Vector2* uv, Vector4* color)
+    void DrawScanLineTest(float x1, float x2, int y)
     {
-        for (int i = 0; i < 3; ++i)
+        int sx1 = ProjToScreenX(x1);
+        int sx2 = ProjToScreenX(x2);;
+
+        for (int i = sx1; i <= sx2; ++i)
         {
-            Vector4 p = pos[i] / pos[i].w;
-            int x = (int) ((p.x * 0.5f + 0.5f) * m_default_buffer_width);
-            int y = (int) ((p.y * 0.5f + 0.5f) * m_default_buffer_height);
-
-            SetPixel(x, y, color[i].x, color[i].y, color[i].z, color[i].w);
+            SetPixelTest(i, y, 1, 1, 1, 1);
         }
+    }
 
+    int ProjToScreenX(float x)
+    {
+        return Mathf::RoundToInt((x * 0.5f + 0.5f) * m_default_buffer_width);
+    }
+
+    int ProjToScreenY(float y)
+    {
+        return Mathf::RoundToInt((y * 0.5f + 0.5f) * m_default_buffer_height);
+    }
+
+    float ScreenToProjY(int y)
+    {
+        return y / (float) m_default_buffer_height * 2 - 1;
+    }
+
+    void DrawTriangleTest(const Vector4* pos, const Vector2* uv, const Vector4* color)
+    {
         Vector4 a = pos[0];
         Vector4 b = pos[1];
         Vector4 c = pos[2];
@@ -187,36 +204,51 @@ public:
 
         /*
                      pc
-
+ 
             pb     pd
 
                 pa
         */
 
-        Vector4 pd(0, pb.y, 0, 0);
-        pd.x = pc.x - (pc.y - pd.y) * (pc.x - pa.x) / (pc.y - pa.y);
+        Vector2 pd;
+        pd.x = pc.x - (pc.y - pb.y) * (pc.x - pa.x) / (pc.y - pa.y);
+        pd.y = pb.y;
 
-        const float step_y = 2.0f / m_default_buffer_height;
+        const int step_y = 1; //2.0f / m_default_buffer_height;
 
         // up scan
-        float y = pd.y;
-        while (y <= pc.y)
+        
+        int center = ProjToScreenY(pd.y);
+        int y = center;
+        int top = ProjToScreenY(pc.y);
+        while (y <= top)
         {
-            float x1 = pc.x - (pc.y - y) * (pc.x - pd.x) / (pc.y - pd.y);
-            float x2 = pc.x - (pc.y - y) * (pc.x - pb.x) / (pc.y - pb.y);
-            SetPixel((int) ((x1 * 0.5f + 0.5f) * m_default_buffer_width), (int) ((y * 0.5f + 0.5f) * m_default_buffer_height), 1, 1, 1, 1);
-            SetPixel((int) ((x2 * 0.5f + 0.5f) * m_default_buffer_width), (int) ((y * 0.5f + 0.5f) * m_default_buffer_height), 1, 1, 1, 1);
+            float x1 = pc.x - (pc.y - ScreenToProjY(y)) * (pc.x - pd.x) / (pc.y - pd.y);
+            float x2 = pc.x - (pc.y - ScreenToProjY(y)) * (pc.x - pb.x) / (pc.y - pd.y);
+            if (x1 > x2)
+            {
+                std::swap(x1, x2);
+            }
+
+            DrawScanLineTest(x1, x2, y);
+            
             y += step_y;
         }
 
         // down scan
-        y = pd.y - step_y;
-        while (y >= pa.y)
+        y = center - step_y;
+        int bottom = ProjToScreenY(pa.y);
+        while (y >= bottom)
         {
-            float x1 = pa.x - (pa.y - y) * (pa.x - pd.x) / (pa.y - pd.y);
-            float x2 = pa.x - (pa.y - y) * (pa.x - pb.x) / (pa.y - pb.y);
-            SetPixel((int) ((x1 * 0.5f + 0.5f) * m_default_buffer_width), (int) ((y * 0.5f + 0.5f) * m_default_buffer_height), 1, 1, 1, 1);
-            SetPixel((int) ((x2 * 0.5f + 0.5f) * m_default_buffer_width), (int) ((y * 0.5f + 0.5f) * m_default_buffer_height), 1, 1, 1, 1);
+            float x1 = pa.x - (pa.y - ScreenToProjY(y)) * (pa.x - pd.x) / (pa.y - pd.y);
+            float x2 = pa.x - (pa.y - ScreenToProjY(y)) * (pa.x - pb.x) / (pa.y - pd.y);
+            if (x1 > x2)
+            {
+                std::swap(x1, x2);
+            }
+
+            DrawScanLineTest(x1, x2, y);
+
             y -= step_y;
         }
     }
@@ -227,8 +259,8 @@ public:
     {
         if (dll == nullptr)
         {
-            std::string vs_path = "C:\\Program Files (x86)\\Microsoft Visual Studio\\2017\\Community";
-            //std::string vs_path = "D:\\Program\\VS2017";
+            //std::string vs_path = "C:\\Program Files (x86)\\Microsoft Visual Studio\\2017\\Community";
+            std::string vs_path = "D:\\Program\\VS2017";
 
             std::string cl_dir = vs_path + "\\VC\\Tools\\MSVC\\14.12.25827\\bin\\Hostx64\\x64";
             exec_cmd(cl_dir, "cl.exe", "/c test.vs.cpp test.ps.cpp "
@@ -251,19 +283,19 @@ public:
                 Vector4 color;
             };
 
-            Matrix4x4 view = Matrix4x4::LookTo(
-                Vector3(0, 1, -2),
-                Vector3(0, 0, 1),
-                Vector3(0, 1, 0));
-            Matrix4x4 proj = Matrix4x4::Perspective(60, 1280 / 720.0f, 0.3f, 1000);
-            Matrix4x4 vp = proj * view;
-
             Vertex vertices[3] = {
                 { Vector3(-1, 0, 2), Vector2(0, 0), Vector4(1, 0, 0, 1) },
                 { Vector3(-1, 0, 1), Vector2(0, 1), Vector4(0, 1, 0, 1) },
                 { Vector3(1, 0, 0), Vector2(1, 1), Vector4(0, 0, 1, 1) },
             };
             unsigned short indices[3] = { 0, 1, 2 };
+
+            Matrix4x4 view = Matrix4x4::LookTo(
+                Vector3(0, 1, -2),
+                Vector3(0, 0, 1),
+                Vector3(0, 1, 0));
+            Matrix4x4 proj = Matrix4x4::Perspective(60, 1280 / 720.0f, 0.3f, 1000);
+            Matrix4x4 vp = proj * view;
 
             Vector4 gl_position[3];
             Vector2 v_uv[3];
@@ -309,7 +341,7 @@ public:
 
             if (ps_main)
             {
-                DrawTriangle(gl_position, v_uv, v_color);
+                DrawTriangleTest(gl_position, v_uv, v_color);
             }
         }
     }
