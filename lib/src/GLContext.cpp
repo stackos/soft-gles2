@@ -143,12 +143,55 @@ public:
         }
     }
 
-    void SetPixelTest(int x, int y, float r, float g, float b, float a)
+    struct Vector2i
     {
-        m_default_color_buffer[y * m_default_buffer_width * 4 + x * 4 + 0] = FloatToColorByte(r);
-        m_default_color_buffer[y * m_default_buffer_width * 4 + x * 4 + 1] = FloatToColorByte(g);
-        m_default_color_buffer[y * m_default_buffer_width * 4 + x * 4 + 2] = FloatToColorByte(b);
-        m_default_color_buffer[y * m_default_buffer_width * 4 + x * 4 + 3] = FloatToColorByte(a);
+        int x;
+        int y;
+
+        Vector2i(int x = 0, int y = 0): x(x), y(y) { }
+
+        Vector2i operator -(const Vector2i& right) const
+        {
+            return Vector2i(x - right.x, y - right.y);
+        }
+
+        static int Dot(const Vector2i& left, const Vector2i& right)
+        {
+            return left.x * right.x + left.y * right.y;
+        }
+
+        static int Cross(const Vector2i& left, const Vector2i& right)
+        {
+            return left.x * right.y - left.y * right.x;
+        }
+    };
+
+    struct Color
+    {
+        float r;
+        float g;
+        float b;
+        float a;
+
+        Color(float r = 1, float g = 1, float b = 1, float a = 1): r(r), g(g), b(b), a(a) { }
+
+        Color operator +(const Color& right) const
+        {
+            return Color(r + right.r, g + right.g, b + right.b, a + right.a);
+        }
+
+        Color operator *(float right) const
+        {
+            return Color(r * right, g * right, b * right, a * right);
+        }
+    };
+
+    void SetPixelTest(const Vector2i& p, const Color& c)
+    {
+        m_default_color_buffer[p.y * m_default_buffer_width * 4 + p.x * 4 + 0] = FloatToColorByte(c.r);
+        m_default_color_buffer[p.y * m_default_buffer_width * 4 + p.x * 4 + 1] = FloatToColorByte(c.g);
+        m_default_color_buffer[p.y * m_default_buffer_width * 4 + p.x * 4 + 2] = FloatToColorByte(c.b);
+        m_default_color_buffer[p.y * m_default_buffer_width * 4 + p.x * 4 + 3] = FloatToColorByte(c.a);
     }
 
     float ProjToScreenX(float x)
@@ -161,44 +204,43 @@ public:
         return (y * 0.5f + 0.5f) * m_default_buffer_height;
     }
 
-    bool IsTopLeftEdge(int x1, int y1, int x2, int y2)
+    bool IsTopLeftEdge(const Vector2i& p0, const Vector2i& p1)
     {
-        return ((y2 > y1) || (y1 == y2 && x1 > x2));
+        return ((p1.y > p0.y) || (p0.y == p1.y && p0.x > p1.x));
     }
 
-    struct Vector2i
+    int EdgeEquation(const Vector2i& p, const Vector2i& p0, const Vector2i& p1)
     {
-        int x;
-        int y;
-    };
+        return (p1.x - p0.x) * (p.y - p0.y) - (p1.y - p0.y) * (p.x - p0.x) + IsTopLeftEdge(p0, p1) ? 0 : -1;
+    }
 
-    Vector<Vector2i> TriangleEdge(int x1, int y1, int x2, int y2)
+    Vector<Vector2i> TriangleEdge(const Vector2i& p0, const Vector2i& p1)
     {
         Vector<Vector2i> line;
 
-        if (x1 == x2)
+        if (p0.x == p1.x)
         {
-            int y = y1;
-            int step = y2 > y1 ? 1 : -1;
-            while (y != y2)
+            int y = p0.y;
+            int step = p1.y > p0.y ? 1 : -1;
+            while (y != p1.y)
             {
-                line.Add({ x1, y });
+                line.Add({ p0.x, y });
                 y += step;
             }
-            line.Add({ x2, y2 });
+            line.Add({ p1.x, p1.y });
         }
         else
         {
-            float k = fabs((y2 - y1) / (float) (x2 - x1));
+            float k = fabs((p1.y - p0.y) / (float) (p1.x - p0.x));
 
             if (k < 1) // x step 1
             {
-                int x = x1;
-                int y = y1;
-                int x_step = x2 > x1 ? 1 : -1;
-                int y_step = y2 > y1 ? 1 : -1;
+                int x = p0.x;
+                int y = p0.y;
+                int x_step = p1.x > p0.x ? 1 : -1;
+                int y_step = p1.y > p0.y ? 1 : -1;
                 float d = 0;
-                while (x != x2)
+                while (x != p1.x)
                 {
                     if (d >= 0.5f)
                     {
@@ -217,16 +259,16 @@ public:
                         y += y_step;
                     }
                 }
-                line.Add({ x2, y2 });
+                line.Add({ p1.x, p1.y });
             }
             else // y step 1
             {
-                int x = x1;
-                int y = y1;
-                int x_step = x2 > x1 ? 1 : -1;
-                int y_step = y2 > y1 ? 1 : -1;
+                int x = p0.x;
+                int y = p0.y;
+                int x_step = p1.x > p0.x ? 1 : -1;
+                int y_step = p1.y > p0.y ? 1 : -1;
                 float d = 0;
-                while (y != y2)
+                while (y != p1.y)
                 {
                     if (d >= 0.5f)
                     {
@@ -245,15 +287,98 @@ public:
                         x += x_step;
                     }
                 }
-                line.Add({ x2, y2 });
+                line.Add({ p1.x, p1.y });
             }
         }
 
         return line;
     }
 
-    void DrawTriangleTest(const Vector4* pos, const Vector2* uv, const Vector4* color)
+    void DrawScanLineTest(int y, int min_x, int max_x, const Vector2i& p0, const Vector2i& p1, const Vector2i& p2,
+        const Vector2* uv, const Color* color)
     {
+        float area = fabs(Vector2i::Cross(p0 - p1, p2 - p1) / 2.0f);
+        
+        for (int i = min_x; i <= max_x; ++i)
+        {
+            Vector2i p(i, y);
+            int w1 = EdgeEquation(p, p0, p1);
+            int w2 = EdgeEquation(p, p1, p2);
+            int w3 = EdgeEquation(p, p2, p0);
+
+            if (w1 >= 0 && w2 >= 0 && w3 >= 0)
+            {
+                float a01 = fabs(Vector2i::Cross(p1 - p, p0 - p) / 2.0f) / area;
+                float a12 = fabs(Vector2i::Cross(p2 - p, p1 - p) / 2.0f) / area;
+                float a20 = 1.0f - a01 - a12;
+
+                Color c = color[2] * a01 + color[0] * a12 + color[1] * a20;
+
+                SetPixelTest(p, c);
+            }
+        }
+    }
+
+    void DrawHalfTriangleTest(
+        const Vector<Vector2i>& e1, const Vector<Vector2i>& e2,
+        int y_top, int y_bottom,
+        const Vector2i& p0, const Vector2i& p1, const Vector2i& p2,
+        const Vector2* uv, const Color* color)
+    {
+        int i1 = 0;
+        int i2 = 0;
+        int y = y_top;
+        while (y != y_bottom)
+        {
+            int min_x = 0x7fffffff;
+            int max_x = -1;
+
+            for (int i = i1; i < e1.Size(); ++i)
+            {
+                if (e1[i].y != y)
+                {
+                    i1 = i;
+                    break;
+                }
+                else
+                {
+                    min_x = Mathf::Min(min_x, e1[i].x);
+                    max_x = Mathf::Max(max_x, e1[i].x);
+                }
+            }
+
+            for (int i = i2; i < e2.Size(); ++i)
+            {
+                if (e2[i].y != y)
+                {
+                    i2 = i;
+                    break;
+                }
+                else
+                {
+                    min_x = Mathf::Min(min_x, e2[i].x);
+                    max_x = Mathf::Max(max_x, e2[i].x);
+                }
+            }
+
+            DrawScanLineTest(y, min_x, max_x, p0, p1, p2, uv, color);
+
+            y--;
+        }
+    }
+
+    void DrawTriangleTest(const Vector4* pos, const Vector2* uv, const Color* color)
+    {
+        Vector2i p0;
+        Vector2i p1;
+        Vector2i p2;
+        p0.x = (int) ProjToScreenX(pos[0].x / pos[0].w);
+        p1.x = (int) ProjToScreenX(pos[1].x / pos[1].w);
+        p2.x = (int) ProjToScreenX(pos[2].x / pos[2].w);
+        p0.y = (int) ProjToScreenY(pos[0].y / pos[0].w);
+        p1.y = (int) ProjToScreenY(pos[1].y / pos[1].w);
+        p2.y = (int) ProjToScreenY(pos[2].y / pos[2].w);
+
         Vector4 a = pos[0];
         Vector4 b = pos[1];
         Vector4 c = pos[2];
@@ -290,169 +415,26 @@ public:
         pd.x = pc.x - (pc.y - pb.y) * (pc.x - pa.x) / (pc.y - pa.y);
         pd.y = pb.y;
 
-        // fill cbd
         {
-            int x1 = (int) ProjToScreenX(pc.x);
-            int y1 = (int) ProjToScreenY(pc.y);
-            int x2 = (int) ProjToScreenX(pd.x);
-            int y2 = (int) ProjToScreenY(pd.y);
-            int x3 = (int) ProjToScreenX(pb.x);
-            int y3 = (int) ProjToScreenY(pb.y);
+            Vector2i sa, sb, sc, sd;
+            sa.x = (int) ProjToScreenX(pa.x);
+            sa.y = (int) ProjToScreenY(pa.y);
+            sb.x = (int) ProjToScreenX(pb.x);
+            sb.y = (int) ProjToScreenY(pb.y);
+            sc.x = (int) ProjToScreenX(pc.x);
+            sc.y = (int) ProjToScreenY(pc.y);
+            sd.x = (int) ProjToScreenX(pd.x);
+            sd.y = (int) ProjToScreenY(pd.y);
 
-            Vector<Vector2i> e1 = TriangleEdge(x1, y1, x2, y2);
-            Vector<Vector2i> e2 = TriangleEdge(x1, y1, x3, y3);
+            Vector<Vector2i> e1 = TriangleEdge(sc, sd);
+            Vector<Vector2i> e2 = TriangleEdge(sc, sb);
 
-            int i1 = 0;
-            int i2 = 0;
-            int y = y1;
-            while (y != y2)
-            {
-                int minX = 0x7fffffff;
-                int maxX = -1;
+            DrawHalfTriangleTest(e1, e2, sc.y, sd.y, p0, p1, p2, uv, color);
 
-                for (int i = i1; i < e1.Size(); ++i)
-                {
-                    if (e1[i].y != y)
-                    {
-                        i1 = i;
-                        break;
-                    }
-                    else
-                    {
-                        minX = Mathf::Min(minX, e1[i].x);
-                        maxX = Mathf::Max(maxX, e1[i].x);
-                    }
-                }
-
-                for (int i = i2; i < e2.Size(); ++i)
-                {
-                    if (e2[i].y != y)
-                    {
-                        i2 = i;
-                        break;
-                    }
-                    else
-                    {
-                        minX = Mathf::Min(minX, e2[i].x);
-                        maxX = Mathf::Max(maxX, e2[i].x);
-                    }
-                }
-
-                for (int i = minX; i <= maxX; ++i)
-                {
-                    // todo:
-                    // apply top left side check
-                    SetPixelTest(i, y, 1, 1, 1, 1);
-                }
-
-                y--;
-            }
+            e1 = TriangleEdge(sd, sa);
+            e2 = TriangleEdge(sb, sa);
+            DrawHalfTriangleTest(e1, e2, sd.y, sa.y, p0, p1, p2, uv, color);
         }
-        
-        // fill abd
-        {
-            int x1 = (int) ProjToScreenX(pa.x);
-            int y1 = (int) ProjToScreenY(pa.y);
-            int x2 = (int) ProjToScreenX(pd.x);
-            int y2 = (int) ProjToScreenY(pd.y);
-            int x3 = (int) ProjToScreenX(pb.x);
-            int y3 = (int) ProjToScreenY(pb.y);
-
-            Vector<Vector2i> e1 = TriangleEdge(x2, y2, x1, y1);
-            Vector<Vector2i> e2 = TriangleEdge(x3, y3, x1, y1);
-
-            int i1 = 0;
-            int i2 = 0;
-            int y = y3;
-            while (y != y1)
-            {
-                int minX = 0x7fffffff;
-                int maxX = -1;
-
-                for (int i = i1; i < e1.Size(); ++i)
-                {
-                    if (e1[i].y != y)
-                    {
-                        i1 = i;
-                        break;
-                    }
-                    else
-                    {
-                        minX = Mathf::Min(minX, e1[i].x);
-                        maxX = Mathf::Max(maxX, e1[i].x);
-                    }
-                }
-
-                for (int i = i2; i < e2.Size(); ++i)
-                {
-                    if (e2[i].y != y)
-                    {
-                        i2 = i;
-                        break;
-                    }
-                    else
-                    {
-                        minX = Mathf::Min(minX, e2[i].x);
-                        maxX = Mathf::Max(maxX, e2[i].x);
-                    }
-                }
-
-                for (int i = minX; i <= maxX; ++i)
-                {
-                    // todo:
-                    // apply top left side check
-                    SetPixelTest(i, y, 1, 1, 1, 1);
-                }
-
-                y--;
-            }
-        }
-
-        /*
-        int TopLeftEdge(int x1, int y1, int x2, int y2)
-        {
-            return ((y2 > y1) || (y1 == y2 && x1 > x2)) ? 0 : -1;
-        }
-
-        int EdgeEquation(int x, int y, int x1, int y1, int x2, int y2)
-        {
-            return (x2 - x1) * (y - y1) - (y2 - y1) * (x - x1) + TopLeftEdge(x1, y1, x2, y2);
-        }
-
-        void DrawTriangleTest(const Vector4* pos, const Vector2* uv, const Vector4* color)
-        {
-            Vector4 v1 = pos[0] / pos[0].w;
-            Vector4 v2 = pos[1] / pos[1].w;
-            Vector4 v3 = pos[2] / pos[2].w;
-
-            int x1 = (int) ProjToScreenX(v1.x);
-            int x2 = (int) ProjToScreenX(v2.x);
-            int x3 = (int) ProjToScreenX(v3.x);
-
-            int y1 = (int) ProjToScreenY(v1.y);
-            int y2 = (int) ProjToScreenY(v2.y);
-            int y3 = (int) ProjToScreenY(v3.y);
-
-            int minx = Mathf::Min(Mathf::Min(x1, x2), x3);
-            int maxx = Mathf::Max(Mathf::Max(x1, x2), x3);
-            int miny = Mathf::Min(Mathf::Min(y1, y2), y3);
-            int maxy = Mathf::Max(Mathf::Max(y1, y2), y3);
-
-            for (int y = miny; y < maxy; y++)
-            {
-                for (int x = minx; x < maxx; x++)
-                {
-                    int w1 = EdgeEquation(x, y, x1, y1, x2, y2);
-                    int w2 = EdgeEquation(x, y, x2, y2, x3, y3);
-                    int w3 = EdgeEquation(x, y, x3, y3, x1, y1);
-
-                    if (w1 >= 0 && w2 >= 0 && w3 >= 0)
-                    {
-                        SetPixelTest(x, y, 1, 1, 1, 1);
-                    }
-                }
-            }
-        }*/
     }
 
     HMODULE dll = nullptr;
@@ -461,8 +443,8 @@ public:
     {
         if (dll == nullptr)
         {
-            //std::string vs_path = "C:\\Program Files (x86)\\Microsoft Visual Studio\\2017\\Community";
-            std::string vs_path = "D:\\Program\\VS2017";
+            std::string vs_path = "C:\\Program Files (x86)\\Microsoft Visual Studio\\2017\\Community";
+            //std::string vs_path = "D:\\Program\\VS2017";
 
             std::string cl_dir = vs_path + "\\VC\\Tools\\MSVC\\14.12.25827\\bin\\Hostx64\\x64";
             exec_cmd(cl_dir, "cl.exe", "/c test.vs.cpp test.ps.cpp "
@@ -482,15 +464,16 @@ public:
             {
                 Vector3 pos;
                 Vector2 uv;
-                Vector4 color;
+                Color color;
             };
 
-            Vertex vertices[3] = {
-                { Vector3(-1, 0, 2), Vector2(0, 0), Vector4(1, 0, 0, 1) },
-                { Vector3(-1, 0, 1), Vector2(0, 1), Vector4(0, 1, 0, 1) },
-                { Vector3(1, 0, 0), Vector2(1, 1), Vector4(0, 0, 1, 1) },
+            Vertex vertices[4] = {
+                { Vector3(-1, 0, 2), Vector2(0, 0), Color(1, 0, 0, 1) },
+                { Vector3(-1, 0, 0), Vector2(0, 1), Color(0, 1, 0, 1) },
+                { Vector3(1, 0, 0), Vector2(1, 1), Color(0, 0, 1, 1) },
+                { Vector3(1, 0, 2), Vector2(1, 1), Color(1, 0, 1, 1) },
             };
-            unsigned short indices[3] = { 0, 1, 2 };
+            unsigned short indices[6] = { 0, 1, 2, 0, 2, 3 };
 
             Matrix4x4 view = Matrix4x4::LookTo(
                 Vector3(0, 1, -2),
@@ -498,10 +481,6 @@ public:
                 Vector3(0, 1, 0));
             Matrix4x4 proj = Matrix4x4::Perspective(60, 1280 / 720.0f, 0.3f, 1000);
             Matrix4x4 vp = proj * view;
-
-            Vector4 gl_position[3];
-            Vector2 v_uv[3];
-            Vector4 v_color[3];
 
             typedef void*(*VarGetter)();
             typedef void(*VarSetter)(void*, int);
@@ -515,35 +494,42 @@ public:
             VarGetter get_v_uv = (VarGetter) GetProcAddress(dll, "get_v_uv");
             VarGetter get_v_color = (VarGetter) GetProcAddress(dll, "get_v_color");
 
-            if (vs_main)
-            {
-                for (int i = 0; i < 3; ++i)
-                {
-                    unsigned short index = indices[i];
-
-                    Vector4 pos = vp * Vector4(vertices[index].pos, 1);
-
-                    set_a_position(&pos, sizeof(Vector4));
-                    set_a_uv(&vertices[index].uv, sizeof(Vector2));
-                    set_a_color(&vertices[index].color, sizeof(Vector4));
-
-                    vs_main();
-
-                    gl_position[i] = *(Vector4*) get_gl_Position();
-                    v_uv[i] = *(Vector2*) get_v_uv();
-                    v_color[i] = *(Vector4*) get_v_color();
-                }
-            }
-
             VarSetter set_u_tex = (VarSetter) GetProcAddress(dll, "set_u_tex");
             VarSetter set_v_uv = (VarSetter) GetProcAddress(dll, "set_v_uv");
             VarSetter set_v_color = (VarSetter) GetProcAddress(dll, "set_v_color");
             Main ps_main = (Main) GetProcAddress(dll, "ps_main");
             VarGetter get_gl_FragColor = (VarGetter) GetProcAddress(dll, "get_gl_FragColor");
 
-            if (ps_main)
+            for (int i = 0; i < 2; ++i)
             {
-                DrawTriangleTest(gl_position, v_uv, v_color);
+                Vector4 gl_position[3];
+                Vector2 v_uv[3];
+                Color v_color[3];
+
+                if (vs_main)
+                {
+                    for (int j = 0; j < 3; ++j)
+                    {
+                        unsigned short index = indices[i * 3 + j];
+
+                        Vector4 pos = vp * Vector4(vertices[index].pos, 1);
+
+                        set_a_position(&pos, sizeof(Vector4));
+                        set_a_uv(&vertices[index].uv, sizeof(Vector2));
+                        set_a_color(&vertices[index].color, sizeof(Color));
+
+                        vs_main();
+
+                        gl_position[j] = *(Vector4*) get_gl_Position();
+                        v_uv[j] = *(Vector2*) get_v_uv();
+                        v_color[j] = *(Color*) get_v_color();
+                    }
+                }
+
+                if (ps_main)
+                {
+                    DrawTriangleTest(gl_position, v_uv, v_color);
+                }
             }
         }
     }
