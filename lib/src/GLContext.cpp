@@ -25,6 +25,7 @@
 #include "math/Vector3.h"
 #include "math/Vector4.h"
 #include "math/Matrix4x4.h"
+#include "container/Vector.h"
 #include <Windows.h>
 #include <string>
 
@@ -165,29 +166,26 @@ public:
         return ((y2 > y1) || (y1 == y2 && x1 > x2));
     }
 
-    void DrawLineTest(int x1, int y1, int x2, int y2)
+    struct Vector2i
     {
+        int x;
+        int y;
+    };
+
+    Vector<Vector2i> TriangleEdge(int x1, int y1, int x2, int y2)
+    {
+        Vector<Vector2i> line;
+
         if (x1 == x2)
         {
             int y = y1;
             int step = y2 > y1 ? 1 : -1;
             while (y != y2)
             {
-                SetPixelTest(x1, y, 1, 1, 1, 1);
+                line.Add({ x1, y });
                 y += step;
             }
-            SetPixelTest(x2, y2, 1, 1, 1, 1);
-        }
-        else if (y1 == y2) // k == 0
-        {
-            int x = x1;
-            int step = x2 > x1 ? 1 : -1;
-            while (x != x2)
-            {
-                SetPixelTest(x, y1, 1, 1, 1, 1);
-                x += step;
-            }
-            SetPixelTest(x2, y2, 1, 1, 1, 1);
+            line.Add({ x2, y2 });
         }
         else
         {
@@ -204,11 +202,11 @@ public:
                 {
                     if (d >= 0.5f)
                     {
-                        SetPixelTest(x, y + y_step, 1, 1, 1, 1);
+                        line.Add({ x, y + y_step });
                     }
                     else
                     {
-                        SetPixelTest(x, y, 1, 1, 1, 1);
+                        line.Add({ x, y });
                     }
                     
                     x += x_step;
@@ -219,7 +217,7 @@ public:
                         y += y_step;
                     }
                 }
-                SetPixelTest(x2, y2, 1, 1, 1, 1);
+                line.Add({ x2, y2 });
             }
             else // y step 1
             {
@@ -232,11 +230,11 @@ public:
                 {
                     if (d >= 0.5f)
                     {
-                        SetPixelTest(x + x_step, y, 1, 1, 1, 1);
+                        line.Add({ x + x_step, y });
                     }
                     else
                     {
-                        SetPixelTest(x, y, 1, 1, 1, 1);
+                        line.Add({ x, y });
                     }
 
                     y += y_step;
@@ -247,9 +245,11 @@ public:
                         x += x_step;
                     }
                 }
-                SetPixelTest(x2, y2, 1, 1, 1, 1);
+                line.Add({ x2, y2 });
             }
         }
+
+        return line;
     }
 
     void DrawTriangleTest(const Vector4* pos, const Vector2* uv, const Vector4* color)
@@ -290,7 +290,7 @@ public:
         pd.x = pc.x - (pc.y - pb.y) * (pc.x - pa.x) / (pc.y - pa.y);
         pd.y = pb.y;
 
-        // draw line pc->pd and pc->pb
+        // fill cbd
         {
             int x1 = (int) ProjToScreenX(pc.x);
             int y1 = (int) ProjToScreenY(pc.y);
@@ -299,11 +299,57 @@ public:
             int x3 = (int) ProjToScreenX(pb.x);
             int y3 = (int) ProjToScreenY(pb.y);
 
-            DrawLineTest(x1, y1, x2, y2);
-            DrawLineTest(x1, y1, x3, y3);
+            Vector<Vector2i> e1 = TriangleEdge(x1, y1, x2, y2);
+            Vector<Vector2i> e2 = TriangleEdge(x1, y1, x3, y3);
+
+            int i1 = 0;
+            int i2 = 0;
+            int y = y1;
+            while (y != y2)
+            {
+                int minX = 0x7fffffff;
+                int maxX = -1;
+
+                for (int i = i1; i < e1.Size(); ++i)
+                {
+                    if (e1[i].y != y)
+                    {
+                        i1 = i;
+                        break;
+                    }
+                    else
+                    {
+                        minX = Mathf::Min(minX, e1[i].x);
+                        maxX = Mathf::Max(maxX, e1[i].x);
+                    }
+                }
+
+                for (int i = i2; i < e2.Size(); ++i)
+                {
+                    if (e2[i].y != y)
+                    {
+                        i2 = i;
+                        break;
+                    }
+                    else
+                    {
+                        minX = Mathf::Min(minX, e2[i].x);
+                        maxX = Mathf::Max(maxX, e2[i].x);
+                    }
+                }
+
+                for (int i = minX; i <= maxX; ++i)
+                {
+                    // todo:
+                    // apply top left side check
+                    SetPixelTest(i, y, 1, 1, 1, 1);
+                }
+
+                y--;
+            }
         }
         
-        // draw line pa->pd and pa->pb
+        // fill abd
         {
             int x1 = (int) ProjToScreenX(pa.x);
             int y1 = (int) ProjToScreenY(pa.y);
@@ -312,8 +358,54 @@ public:
             int x3 = (int) ProjToScreenX(pb.x);
             int y3 = (int) ProjToScreenY(pb.y);
 
-            DrawLineTest(x1, y1, x2, y2);
-            DrawLineTest(x1, y1, x3, y3);
+            Vector<Vector2i> e1 = TriangleEdge(x2, y2, x1, y1);
+            Vector<Vector2i> e2 = TriangleEdge(x3, y3, x1, y1);
+
+            int i1 = 0;
+            int i2 = 0;
+            int y = y3;
+            while (y != y1)
+            {
+                int minX = 0x7fffffff;
+                int maxX = -1;
+
+                for (int i = i1; i < e1.Size(); ++i)
+                {
+                    if (e1[i].y != y)
+                    {
+                        i1 = i;
+                        break;
+                    }
+                    else
+                    {
+                        minX = Mathf::Min(minX, e1[i].x);
+                        maxX = Mathf::Max(maxX, e1[i].x);
+                    }
+                }
+
+                for (int i = i2; i < e2.Size(); ++i)
+                {
+                    if (e2[i].y != y)
+                    {
+                        i2 = i;
+                        break;
+                    }
+                    else
+                    {
+                        minX = Mathf::Min(minX, e2[i].x);
+                        maxX = Mathf::Max(maxX, e2[i].x);
+                    }
+                }
+
+                for (int i = minX; i <= maxX; ++i)
+                {
+                    // todo:
+                    // apply top left side check
+                    SetPixelTest(i, y, 1, 1, 1, 1);
+                }
+
+                y--;
+            }
         }
 
         /*
