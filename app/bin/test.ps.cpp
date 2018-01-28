@@ -71,16 +71,15 @@ struct vec4
 class sampler2D
 {
 public:
-    vec4 sample(const vec2& uv) const
-    {
-        return vec4();
-    }
+    typedef vec4(*Sample)(void*, void*);
+    void* texture;
+    Sample sample_func;
 };
 
 static vec4 gl_FragColor;
 static vec4 texture2D(const sampler2D& sampler, const vec2& uv)
 {
-    return sampler.sample(uv);
+    return sampler.sample_func(sampler.texture, (void*) &uv);
 }
 
 //
@@ -94,7 +93,8 @@ varying vec4 v_color;
 DLL_EXPORT
 void ps_main()
 {
-    gl_FragColor = texture2D(u_tex, v_uv) * v_color;
+    //gl_FragColor = v_color;
+    gl_FragColor = texture2D(u_tex, v_uv);
 }
 //
 // shader end

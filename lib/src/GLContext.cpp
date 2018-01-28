@@ -26,6 +26,8 @@
 #include "math/Vector4.h"
 #include "math/Matrix4x4.h"
 #include "container/Vector.h"
+#include "io/File.h"
+#include "graphics/Image.h"
 #include <Windows.h>
 #include <string>
 
@@ -239,6 +241,7 @@ public:
                 int y = p0.y;
                 int x_step = p1.x > p0.x ? 1 : -1;
                 int y_step = p1.y > p0.y ? 1 : -1;
+                float d_step = k;
                 float d = 0;
                 while (x != p1.x)
                 {
@@ -252,7 +255,7 @@ public:
                     }
                     
                     x += x_step;
-                    d += k;
+                    d += d_step;
                     if (d >= 1.0f)
                     {
                         d -= 1.0f;
@@ -267,6 +270,7 @@ public:
                 int y = p0.y;
                 int x_step = p1.x > p0.x ? 1 : -1;
                 int y_step = p1.y > p0.y ? 1 : -1;
+                float d_step = 1.0f / k;
                 float d = 0;
                 while (y != p1.y)
                 {
@@ -280,7 +284,7 @@ public:
                     }
 
                     y += y_step;
-                    d += k;
+                    d += d_step;
                     if (d >= 1.0f)
                     {
                         d -= 1.0f;
@@ -294,10 +298,69 @@ public:
         return line;
     }
 
-    void DrawScanLineTest(int y, int min_x, int max_x, const Vector2i& p0, const Vector2i& p1, const Vector2i& p2,
-        const Vector2* uv, const Color* color)
+    class Texture
     {
-        float area = fabs(Vector2i::Cross(p0 - p1, p2 - p1) / 2.0f);
+    public:
+        int width;
+        int height;
+        int bpp;
+        ByteBuffer data;
+    };
+
+    class Sampler2D
+    {
+    public:
+        typedef Color(*Sample)(Texture*, const Vector2*);
+        Texture* texture;
+        Sample sample_func;
+
+        static Color SampleTexture(Texture* tex, const Vector2* uv)
+        {
+            int x = (int) ((tex->width - 1) * Mathf::Clamp01(uv->x));
+            int y = (int) ((tex->height - 1) * Mathf::Clamp01(uv->y));
+
+            int r = tex->data[y * tex->width * 4 + x * 4 + 0];
+            int g = tex->data[y * tex->width * 4 + x * 4 + 1];
+            int b = tex->data[y * tex->width * 4 + x * 4 + 2];
+            int a = tex->data[y * tex->width * 4 + x * 4 + 3];
+
+            return Color(r / 255.0f, g / 255.0f, b / 255.0f, a / 255.0f);
+        }
+    };
+
+    Color CallFragmentShader(const Vector2& uv, const Color& color)
+    {
+        typedef void*(*VarGetter)();
+        typedef void(*VarSetter)(void*, int);
+        typedef void(*Main)();
+
+        VarSetter set_u_tex = (VarSetter) GetProcAddress(dll, "set_u_tex");
+        VarSetter set_v_uv = (VarSetter) GetProcAddress(dll, "set_v_uv");
+        VarSetter set_v_color = (VarSetter) GetProcAddress(dll, "set_v_color");
+        Main ps_main = (Main) GetProcAddress(dll, "ps_main");
+        VarGetter get_gl_FragColor = (VarGetter) GetProcAddress(dll, "get_gl_FragColor");
+
+        Sampler2D tex;
+        tex.texture = pTex;
+        tex.sample_func = Sampler2D::SampleTexture;
+        set_u_tex(&tex, sizeof(Sampler2D));
+        set_v_uv((void*) &uv, sizeof(Vector2));
+        set_v_color((void*) &color, sizeof(Color));
+        ps_main();
+        return *(Color*) get_gl_FragColor();
+    }
+
+    void DrawScanLineTest(int y, int min_x, int max_x, const Vector2i& p0, const Vector2i& p1, const Vector2i& p2,
+        const Vector4* pos, const Vector2* uv, const Color* color)
+    {
+        // 重心坐标插值
+        float one_div_area = 1.0f / fabs(Vector2i::Cross(p0 - p1, p2 - p1) / 2.0f);
+        // 透视校正
+        float one_div_ws[3] = {
+            1.0f / pos[0].w,
+            1.0f / pos[1].w,
+            1.0f / pos[2].w,
+        };
         
         for (int i = min_x; i <= max_x; ++i)
         {
@@ -308,11 +371,15 @@ public:
 
             if (w1 >= 0 && w2 >= 0 && w3 >= 0)
             {
-                float a01 = fabs(Vector2i::Cross(p1 - p, p0 - p) / 2.0f) / area;
-                float a12 = fabs(Vector2i::Cross(p2 - p, p1 - p) / 2.0f) / area;
+                float a01 = fabs(Vector2i::Cross(p1 - p, p0 - p) / 2.0f) * one_div_area;
+                float a12 = fabs(Vector2i::Cross(p2 - p, p1 - p) / 2.0f) * one_div_area;
                 float a20 = 1.0f - a01 - a12;
 
-                Color c = color[2] * a01 + color[0] * a12 + color[1] * a20;
+                float w = 1.0f / (a01 * one_div_ws[2] + a12 * one_div_ws[0] + a20 * one_div_ws[1]);
+                Vector2 v_uv = (uv[2] * a01 * one_div_ws[2] + uv[0] * a12 * one_div_ws[0] + uv[1] * a20 * one_div_ws[1]) * w;
+                Color v_color = (color[2] * a01 * one_div_ws[2] + color[0] * a12 * one_div_ws[0] + color[1] * a20 * one_div_ws[1]) * w;
+
+                Color c = CallFragmentShader(v_uv, v_color);
 
                 SetPixelTest(p, c);
             }
@@ -323,7 +390,7 @@ public:
         const Vector<Vector2i>& e1, const Vector<Vector2i>& e2,
         int y_top, int y_bottom,
         const Vector2i& p0, const Vector2i& p1, const Vector2i& p2,
-        const Vector2* uv, const Color* color)
+        const Vector4* pos, const Vector2* uv, const Color* color)
     {
         int i1 = 0;
         int i2 = 0;
@@ -361,7 +428,7 @@ public:
                 }
             }
 
-            DrawScanLineTest(y, min_x, max_x, p0, p1, p2, uv, color);
+            DrawScanLineTest(y, min_x, max_x, p0, p1, p2, pos, uv, color);
 
             y--;
         }
@@ -429,15 +496,16 @@ public:
             Vector<Vector2i> e1 = TriangleEdge(sc, sd);
             Vector<Vector2i> e2 = TriangleEdge(sc, sb);
 
-            DrawHalfTriangleTest(e1, e2, sc.y, sd.y, p0, p1, p2, uv, color);
+            DrawHalfTriangleTest(e1, e2, sc.y, sd.y, p0, p1, p2, pos, uv, color);
 
             e1 = TriangleEdge(sd, sa);
             e2 = TriangleEdge(sb, sa);
-            DrawHalfTriangleTest(e1, e2, sd.y, sa.y, p0, p1, p2, uv, color);
+            DrawHalfTriangleTest(e1, e2, sd.y, sa.y, p0, p1, p2, pos, uv, color);
         }
     }
 
     HMODULE dll = nullptr;
+    Texture* pTex = nullptr;
 
     void DrawTest()
     {
@@ -456,6 +524,9 @@ public:
                 "/LIBPATH:\"C:\\Program Files (x86)\\Windows Kits\\10\\lib\\10.0.16299.0\\ucrt\\x64\"");
 
             dll = LoadLibrary("test.dll");
+
+            pTex = new Texture();
+            pTex->data = Image::LoadPNG(File::ReadAllBytes("Assets/texture/girl.png"), pTex->width, pTex->height, pTex->bpp);
         }
         
         if (dll)
@@ -468,15 +539,15 @@ public:
             };
 
             Vertex vertices[4] = {
-                { Vector3(-1, 0, 2), Vector2(0, 0), Color(1, 0, 0, 1) },
-                { Vector3(-1, 0, 0), Vector2(0, 1), Color(0, 1, 0, 1) },
-                { Vector3(1, 0, 0), Vector2(1, 1), Color(0, 0, 1, 1) },
-                { Vector3(1, 0, 2), Vector2(1, 1), Color(1, 0, 1, 1) },
+                { Vector3(-0.45f, 0, 4), Vector2(0, 0), Color(1, 0, 0, 1) },
+                { Vector3(-0.45f, -0.9f, 0), Vector2(0, 1), Color(0, 1, 0, 1) },
+                { Vector3(0.45f, -0.9f, 0), Vector2(1, 1), Color(0, 0, 1, 1) },
+                { Vector3(0.45f, 0, 4), Vector2(1, 0), Color(1, 0, 1, 1) },
             };
             unsigned short indices[6] = { 0, 1, 2, 0, 2, 3 };
 
             Matrix4x4 view = Matrix4x4::LookTo(
-                Vector3(0, 1, -2),
+                Vector3(0, 0, -2),
                 Vector3(0, 0, 1),
                 Vector3(0, 1, 0));
             Matrix4x4 proj = Matrix4x4::Perspective(60, 1280 / 720.0f, 0.3f, 1000);
@@ -493,12 +564,6 @@ public:
             VarGetter get_gl_Position = (VarGetter) GetProcAddress(dll, "get_gl_Position");
             VarGetter get_v_uv = (VarGetter) GetProcAddress(dll, "get_v_uv");
             VarGetter get_v_color = (VarGetter) GetProcAddress(dll, "get_v_color");
-
-            VarSetter set_u_tex = (VarSetter) GetProcAddress(dll, "set_u_tex");
-            VarSetter set_v_uv = (VarSetter) GetProcAddress(dll, "set_v_uv");
-            VarSetter set_v_color = (VarSetter) GetProcAddress(dll, "set_v_color");
-            Main ps_main = (Main) GetProcAddress(dll, "ps_main");
-            VarGetter get_gl_FragColor = (VarGetter) GetProcAddress(dll, "get_gl_FragColor");
 
             for (int i = 0; i < 2; ++i)
             {
@@ -524,10 +589,7 @@ public:
                         v_uv[j] = *(Vector2*) get_v_uv();
                         v_color[j] = *(Color*) get_v_color();
                     }
-                }
 
-                if (ps_main)
-                {
                     DrawTriangleTest(gl_position, v_uv, v_color);
                 }
             }
@@ -556,6 +618,10 @@ public:
         if (dll)
         {
             FreeLibrary(dll);
+        }
+        if (pTex)
+        {
+            delete pTex;
         }
     }
 
