@@ -33,6 +33,9 @@
 
 using namespace Viry3D;
 
+//std::string vs_path = "C:\\Program Files (x86)\\Microsoft Visual Studio\\2017\\Community";
+std::string vs_path = "D:\\Program\\VS2017";
+
 void exec_cmd(const std::string& path, const std::string& exe, const std::string& param)
 {
     STARTUPINFO si;
@@ -312,7 +315,7 @@ public:
     public:
         typedef Color(*Sample)(Texture*, const Vector2*);
         Texture* texture;
-        Sample sample_func;
+        Sample sample_func = Sampler2D::SampleTexture;
 
         static Color SampleTexture(Texture* tex, const Vector2* uv)
         {
@@ -334,16 +337,11 @@ public:
         typedef void(*VarSetter)(void*, int);
         typedef void(*Main)();
 
-        VarSetter set_u_tex = (VarSetter) GetProcAddress(dll, "set_u_tex");
         VarSetter set_v_uv = (VarSetter) GetProcAddress(dll, "set_v_uv");
         VarSetter set_v_color = (VarSetter) GetProcAddress(dll, "set_v_color");
         Main ps_main = (Main) GetProcAddress(dll, "ps_main");
         VarGetter get_gl_FragColor = (VarGetter) GetProcAddress(dll, "get_gl_FragColor");
 
-        Sampler2D tex;
-        tex.texture = pTex;
-        tex.sample_func = Sampler2D::SampleTexture;
-        set_u_tex(&tex, sizeof(Sampler2D));
         set_v_uv((void*) &uv, sizeof(Vector2));
         set_v_color((void*) &color, sizeof(Color));
         ps_main();
@@ -511,9 +509,6 @@ public:
     {
         if (dll == nullptr)
         {
-            std::string vs_path = "C:\\Program Files (x86)\\Microsoft Visual Studio\\2017\\Community";
-            //std::string vs_path = "D:\\Program\\VS2017";
-
             std::string cl_dir = vs_path + "\\VC\\Tools\\MSVC\\14.12.25827\\bin\\Hostx64\\x64";
             exec_cmd(cl_dir, "cl.exe", "/c test.vs.cpp test.ps.cpp "
                 "/I \"" + vs_path + "\\VC\\Tools\\MSVC\\14.12.25827\\include\" "
@@ -557,6 +552,7 @@ public:
             typedef void(*VarSetter)(void*, int);
             typedef void(*Main)();
 
+            VarSetter set_u_tex = (VarSetter) GetProcAddress(dll, "set_u_tex");
             VarSetter set_a_position = (VarSetter) GetProcAddress(dll, "set_a_position");
             VarSetter set_a_uv = (VarSetter) GetProcAddress(dll, "set_a_uv");
             VarSetter set_a_color = (VarSetter) GetProcAddress(dll, "set_a_color");
@@ -565,33 +561,34 @@ public:
             VarGetter get_v_uv = (VarGetter) GetProcAddress(dll, "get_v_uv");
             VarGetter get_v_color = (VarGetter) GetProcAddress(dll, "get_v_color");
 
+            Sampler2D tex;
+            tex.texture = pTex;
+            set_u_tex(&tex, sizeof(Sampler2D));
+
             for (int i = 0; i < 2; ++i)
             {
                 Vector4 gl_position[3];
                 Vector2 v_uv[3];
                 Color v_color[3];
 
-                if (vs_main)
+                for (int j = 0; j < 3; ++j)
                 {
-                    for (int j = 0; j < 3; ++j)
-                    {
-                        unsigned short index = indices[i * 3 + j];
+                    unsigned short index = indices[i * 3 + j];
 
-                        Vector4 pos = vp * Vector4(vertices[index].pos, 1);
+                    Vector4 pos = vp * Vector4(vertices[index].pos, 1);
 
-                        set_a_position(&pos, sizeof(Vector4));
-                        set_a_uv(&vertices[index].uv, sizeof(Vector2));
-                        set_a_color(&vertices[index].color, sizeof(Color));
+                    set_a_position(&pos, sizeof(Vector4));
+                    set_a_uv(&vertices[index].uv, sizeof(Vector2));
+                    set_a_color(&vertices[index].color, sizeof(Color));
 
-                        vs_main();
+                    vs_main();
 
-                        gl_position[j] = *(Vector4*) get_gl_Position();
-                        v_uv[j] = *(Vector2*) get_v_uv();
-                        v_color[j] = *(Color*) get_v_color();
-                    }
-
-                    DrawTriangleTest(gl_position, v_uv, v_color);
+                    gl_position[j] = *(Vector4*) get_gl_Position();
+                    v_uv[j] = *(Vector2*) get_v_uv();
+                    v_color[j] = *(Color*) get_v_color();
                 }
+
+                DrawTriangleTest(gl_position, v_uv, v_color);
             }
         }
     }
