@@ -18,8 +18,9 @@
 #include "DisplayWindows.h"
 #include <windowsx.h>
 
-__declspec(dllimport)
-void set_default_buffers(void* color_buffer, void* depth_buffer, int width, int height);
+__declspec(dllimport) void create_gl_context();
+__declspec(dllimport) void destroy_gl_context();
+__declspec(dllimport) void set_gl_context_default_buffers(void* color_buffer, void* depth_buffer, int width, int height);
 
 LRESULT CALLBACK win_proc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
@@ -51,6 +52,9 @@ DisplayWindows::DisplayWindows(const std::string& name, int width, int height):
 
     this->CreateSystemWindow();
     this->CreateBuffers();
+
+    create_gl_context();
+    set_gl_context_default_buffers(m_color_buffers[m_front_buffer], m_depth_buffers[m_front_buffer], m_width, m_height);
 }
 
 DisplayWindows::~DisplayWindows()
@@ -62,6 +66,8 @@ DisplayWindows::~DisplayWindows()
     free(m_depth_buffers[0]);
     free(m_depth_buffers[1]);
     free(m_bmi_buffer);
+
+    destroy_gl_context();
 }
 
 bool DisplayWindows::ProcessSystemEvents()
@@ -153,8 +159,6 @@ void DisplayWindows::CreateBuffers()
     memset(m_depth_buffers[0], 0, m_buffer_size);
     memset(m_depth_buffers[1], 0, m_buffer_size);
 
-    set_default_buffers(m_color_buffers[m_front_buffer], m_depth_buffers[m_front_buffer], m_width, m_height);
-
     // setup bitmap info for blit
     int bmi_size = sizeof(BITMAPINFOHEADER) + sizeof(DWORD) * 3;
     m_bmi_buffer = malloc(bmi_size);
@@ -186,5 +190,5 @@ void DisplayWindows::SwapBuffers()
     // swap front and back buffer
     m_front_buffer = (m_front_buffer + 1) % 2;
 
-    set_default_buffers(m_color_buffers[m_front_buffer], m_depth_buffers[m_front_buffer], m_width, m_height);
+    set_gl_context_default_buffers(m_color_buffers[m_front_buffer], m_depth_buffers[m_front_buffer], m_width, m_height);
 }

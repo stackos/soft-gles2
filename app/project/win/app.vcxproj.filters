@@ -18,14 +18,8 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\src\AppClear.cpp">
-      <Filter>src</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\src\display\DisplayWindows.cpp">
       <Filter>src\display</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\src\AppShader.cpp">
-      <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\lib\src\math\Bounds.cpp">
       <Filter>src\math</Filter>
@@ -64,6 +58,9 @@
       <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="..\..\bin\test.vs.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\AppCube.cpp">
       <Filter>src</Filter>
     </ClCompile>
   </ItemGroup>

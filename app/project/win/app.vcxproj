@@ -32,8 +32,7 @@
     <ClCompile Include="..\..\..\lib\src\string\String.cpp" />
     <ClCompile Include="..\..\bin\test.ps.cpp" />
     <ClCompile Include="..\..\bin\test.vs.cpp" />
-    <ClCompile Include="..\..\src\AppClear.cpp" />
-    <ClCompile Include="..\..\src\AppShader.cpp" />
+    <ClCompile Include="..\..\src\AppCube.cpp" />
     <ClCompile Include="..\..\src\display\DisplayWindows.cpp" />
   </ItemGroup>
   <ItemGroup>

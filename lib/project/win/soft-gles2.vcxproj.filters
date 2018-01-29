@@ -317,5 +317,11 @@
     <ClInclude Include="..\..\src\Debug.h">
       <Filter>src</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\src\GLFramebuffer.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\GLObject.h">
+      <Filter>src</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

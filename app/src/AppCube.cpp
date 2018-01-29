@@ -24,9 +24,20 @@ class Renderer
 public:
     Renderer()
     {
-        glViewport(0, 0, 1280, 720);
+        glViewport(100, 100, 200, 200);
         glClearColor(1, 0, 0, 1);
         glClearDepthf(1);
+
+        GLuint fbo;
+        glGenFramebuffers(1, &fbo);
+        glDeleteFramebuffers(1, &fbo);
+
+        //glBindFramebuffer
+        //glCheckFramebufferStatus
+        //glFramebufferRenderbuffer
+        //glFramebufferTexture2D
+        //glGetFramebufferAttachmentParameteriv
+        //glIsFramebuffer
     }
 
     virtual ~Renderer()
@@ -39,7 +50,6 @@ public:
     }
 };
 
-#if 0
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShowCmd)
 {
     DisplayWindows* display = new DisplayWindows("soft-gles2", 1280, 720);
@@ -56,4 +66,3 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
     return 0;
 }
-#endif
