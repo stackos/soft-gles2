@@ -323,5 +323,8 @@
     <ClInclude Include="..\..\src\GLObject.h">
       <Filter>src</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\src\GLRenderbuffer.h">
+      <Filter>src</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

@@ -28,26 +28,54 @@ public:
         glClearColor(1, 0, 0, 1);
         glClearDepthf(1);
 
-        GLuint fbo;
-        glGenFramebuffers(1, &fbo);
-        glDeleteFramebuffers(1, &fbo);
+        glGenFramebuffers(1, &m_fbo);
+        glIsFramebuffer(m_fbo);
+        glBindFramebuffer(GL_FRAMEBUFFER, m_fbo);
+        
+        glGenRenderbuffers(1, &m_rbo);
+        glIsRenderbuffer(m_rbo);
+        glBindRenderbuffer(GL_RENDERBUFFER, m_rbo);
+        //glRenderbufferStorage(GL_RENDERBUFFER, GL_RGB565, 1280, 720);
+        //GLint width;
+        //glGetRenderbufferParameteriv(GL_RENDERBUFFER, GL_RENDERBUFFER_WIDTH, &width);
 
-        //glBindFramebuffer
-        //glCheckFramebufferStatus
         //glFramebufferRenderbuffer
         //glFramebufferTexture2D
         //glGetFramebufferAttachmentParameteriv
-        //glIsFramebuffer
+        //glCheckFramebufferStatus
+        
+        //glGenTextures
+        //glDeleteTextures
+        //glIsTexture
+        //glBindTexture
+        //glActiveTexture
+        //glCopyTexImage2D
+        //glCopyTexSubImage2D
+        //glGetTexParameterfv
+        //glGetTexParameteriv
+        //glTexImage2D
+        //glTexParameterf
+        //glTexParameterfv
+        //glTexParameteri
+        //glTexParameteriv
+        //glTexSubImage2D
+        //glCompressedTexImage2D
+        //glCompressedTexSubImage2D
     }
 
     virtual ~Renderer()
     {
+        glDeleteFramebuffers(1, &m_fbo);
+        glDeleteRenderbuffers(1, &m_rbo);
     }
 
     void Draw()
     {
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     }
+
+    GLuint m_fbo;
+    GLuint m_rbo;
 };
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShowCmd)

@@ -21,6 +21,7 @@
 
 #include "GLObject.h"
 #include "GLFramebuffer.h"
+#include "GLRenderbuffer.h"
 
 #include "math/Mathf.h"
 #include "container/Map.h"
@@ -120,6 +121,119 @@ namespace sgl
                     if (fbo)
                     {
                         m_objects.Remove(id);
+
+                        if (!m_current_fbo.expired() && m_current_fbo.lock() == fbo)
+                        {
+                            m_current_fbo.reset();
+                        }
+                    }
+                }
+            }
+        }
+
+        GLboolean IsFramebuffer(GLuint framebuffer)
+        {
+            Ref<GLObject>* find;
+            if (m_objects.TryGet(framebuffer, &find))
+            {
+                Ref<GLFrameFbuffer> fbo = RefCast<GLFrameFbuffer>(*find);
+                if (fbo)
+                {
+                    return GL_TRUE;
+                }
+            }
+
+            return GL_FALSE;
+        }
+
+        void BindFramebuffer(GLenum target, GLuint framebuffer)
+        {
+            if (target == GL_FRAMEBUFFER)
+            {
+                if (framebuffer == 0)
+                {
+                    m_current_fbo.reset();
+                }
+                else
+                {
+                    Ref<GLObject>* find;
+                    if (m_objects.TryGet(framebuffer, &find))
+                    {
+                        Ref<GLFrameFbuffer> fbo = RefCast<GLFrameFbuffer>(*find);
+                        if (fbo)
+                        {
+                            m_current_fbo = fbo;
+                        }
+                    }
+                }
+            }
+        }
+
+        void GenRenderbuffers(GLsizei n, GLuint* renderbuffers)
+        {
+            for (int i = 0; i < n; ++i)
+            {
+                GLuint id = ++m_gen_id;
+                m_objects.Add(id, RefMake<GLRenderbuffer>());
+                renderbuffers[i] = id;
+            }
+        }
+
+        void DeleteRenderbuffers(GLsizei n, const GLuint* renderbuffers)
+        {
+            for (int i = 0; i < n; ++i)
+            {
+                Ref<GLObject>* find;
+                GLuint id = renderbuffers[i];
+                if (m_objects.TryGet(id, &find))
+                {
+                    Ref<GLRenderbuffer> rbo = RefCast<GLRenderbuffer>(*find);
+                    if (rbo)
+                    {
+                        m_objects.Remove(id);
+
+                        if (!m_current_rbo.expired() && m_current_rbo.lock() == rbo)
+                        {
+                            m_current_rbo.reset();
+                        }
+                    }
+                }
+            }
+        }
+
+        GLboolean IsRenderbuffer(GLuint renderbuffer)
+        {
+            Ref<GLObject>* find;
+            if (m_objects.TryGet(renderbuffer, &find))
+            {
+                Ref<GLRenderbuffer> rbo = RefCast<GLRenderbuffer>(*find);
+                if (rbo)
+                {
+                    return GL_TRUE;
+                }
+            }
+
+            return GL_FALSE;
+        }
+
+        void BindRenderbuffer(GLenum target, GLuint renderbuffer)
+        {
+            if (target == GL_RENDERBUFFER)
+            {
+                if (renderbuffer == 0)
+                {
+                    m_current_rbo.reset();
+                }
+                else
+                {
+                    Ref<GLObject>* find;
+                    if (m_objects.TryGet(renderbuffer, &find))
+                    {
+                        Ref<GLRenderbuffer> rbo = RefCast<GLRenderbuffer>(*find);
+                        if (rbo)
+                        {
+                            m_current_rbo = rbo;
+                        }
                     }
                 }
             }
@@ -675,6 +789,8 @@ namespace sgl
 
         Map<GLuint, Ref<GLObject>> m_objects;
         GLuint m_gen_id;
+        WeakRef<GLFrameFbuffer> m_current_fbo;
+        WeakRef<GLRenderbuffer> m_current_rbo;
         int m_viewport_x;
         int m_viewport_y;
         int m_viewport_width;
@@ -704,32 +820,39 @@ __declspec(dllexport) void set_gl_context_default_buffers(void* color_buffer, vo
     gl->SetDefaultBuffers(color_buffer, depth_buffer, width, height);
 }
 
-void GL_APIENTRY glGenFramebuffers(GLsizei n, GLuint* framebuffers)
-{
-    gl->GenFramebuffers(n, framebuffers);
-}
+#define IMPLEMENT_VOID_GL_FUNC_1(func, t1) \
+    void GL_APIENTRY gl##func(t1 p1) { \
+        gl->func(p1); \
+    }
+#define IMPLEMENT_VOID_GL_FUNC_2(func, t1, t2) \
+    void GL_APIENTRY gl##func(t1 p1, t2 p2) { \
+        gl->func(p1, p2); \
+    }
+#define IMPLEMENT_VOID_GL_FUNC_4(func, t1, t2, t3, t4) \
+    void GL_APIENTRY gl##func(t1 p1, t2 p2, t3 p3, t4 p4) { \
+        gl->func(p1, p2, p3, p4); \
+    }
+#define IMPLEMENT_GL_FUNC_1(ret, func, t1) \
+    ret GL_APIENTRY gl##func(t1 p1) { \
+        return gl->func(p1); \
+    }
 
-void GL_APIENTRY glDeleteFramebuffers(GLsizei n, const GLuint* framebuffers)
-{
-    gl->DeleteFramebuffers(n, framebuffers);
-}
+// Framebuffer
+IMPLEMENT_VOID_GL_FUNC_2(GenFramebuffers, GLsizei, GLuint*)
+IMPLEMENT_VOID_GL_FUNC_2(DeleteFramebuffers, GLsizei, const GLuint*)
+IMPLEMENT_GL_FUNC_1(GLboolean, IsFramebuffer, GLuint)
+IMPLEMENT_VOID_GL_FUNC_2(BindFramebuffer, GLenum, GLuint)
 
-void GL_APIENTRY glViewport(GLint x, GLint y, GLsizei width, GLsizei height)
-{
-    gl->Viewport(x, y, width, height);
-}
+// Renderbuffer
+IMPLEMENT_VOID_GL_FUNC_2(GenRenderbuffers, GLsizei, GLuint*)
+IMPLEMENT_VOID_GL_FUNC_2(DeleteRenderbuffers, GLsizei, const GLuint*)
+IMPLEMENT_GL_FUNC_1(GLboolean, IsRenderbuffer, GLuint)
+IMPLEMENT_VOID_GL_FUNC_2(BindRenderbuffer, GLenum, GLuint)
 
-void GL_APIENTRY glClearColor(GLfloat red, GLfloat green, GLfloat blue, GLfloat alpha)
-{
-    gl->ClearColor(red, green, blue, alpha);
-}
+// Viewport
+IMPLEMENT_VOID_GL_FUNC_4(Viewport, GLint, GLint, GLsizei, GLsizei)
 
-void GL_APIENTRY glClearDepthf(GLfloat d)
-{
-    gl->ClearDepthf(d);
-}
-
-void GL_APIENTRY glClear(GLbitfield mask)
-{
-    gl->Clear(mask);
-}
+// Clear
+IMPLEMENT_VOID_GL_FUNC_4(ClearColor, GLfloat, GLfloat, GLfloat, GLfloat)
+IMPLEMENT_VOID_GL_FUNC_1(ClearDepthf, GLfloat)
+IMPLEMENT_VOID_GL_FUNC_1(Clear, GLbitfield)
