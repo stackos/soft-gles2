@@ -52,14 +52,20 @@ public:
         glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, m_rbo_depth);
         glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_STENCIL_ATTACHMENT, GL_RENDERBUFFER, m_rbo_stencil);
 
+        GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+
         // for test api
         glIsRenderbuffer(m_rbo_color);
         GLint width;
         glGetRenderbufferParameteriv(GL_RENDERBUFFER, GL_RENDERBUFFER_WIDTH, &width);
         glIsFramebuffer(m_fbo);
+        GLint type;
+        glGetFramebufferAttachmentParameteriv(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_FRAMEBUFFER_ATTACHMENT_OBJECT_TYPE, &type);
+        GLint name;
+        glGetFramebufferAttachmentParameteriv(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_FRAMEBUFFER_ATTACHMENT_OBJECT_NAME, &name);
 
-        //glGetFramebufferAttachmentParameteriv
-        //glCheckFramebufferStatus
+        //TODO: clear in framebuffer, then read pixels for present
+        //glReadPixels
         //glFramebufferTexture2D
 
         //glGenTextures

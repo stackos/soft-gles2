@@ -17,21 +17,27 @@
 
 #pragma once
 
-#include "GLES2/gl2.h"
-#include "GLES2/gl2ext.h"
+#include "GLObject.h"
 
 namespace sgl
 {
-    class GLObject
+    class GLTexture: public GLObject
     {
     public:
-        GLObject(GLuint id): m_id(id) { }
+        GLTexture(GLuint id):
+            GLObject(id),
+            m_width(0),
+            m_height(0)
+        {
+        }
 
-        virtual ~GLObject() { }
+        virtual ~GLTexture() { }
 
-        GLuint GetId() const { return m_id; }
+        int GetWidth() const { return m_width; }
+        int GetHeight() const { return m_height; }
 
     private:
-        GLuint m_id;
+        int m_width;
+        int m_height;
     };
 }

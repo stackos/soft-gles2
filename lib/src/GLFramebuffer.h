@@ -22,12 +22,13 @@
 
 namespace sgl
 {
-    class GLRenderbuffer;
-    class GLFrameFbuffer: public GLObject
+    class GLFramebuffer: public GLObject
     {
     public:
         enum class Attachment
         {
+            None = -1,
+
             Color0,
             Depth,
             Stencil,
@@ -35,14 +36,39 @@ namespace sgl
             Count
         };
 
-        GLFrameFbuffer() { }
+        GLFramebuffer(GLuint id): GLObject(id) { }
 
-        virtual ~GLFrameFbuffer() { }
+        virtual ~GLFramebuffer() { }
+
+        Attachment GetAttachment(GLenum attachment)
+        {
+            Attachment attach = Attachment::None;
+
+            switch (attachment)
+            {
+                case GL_COLOR_ATTACHMENT0:
+                    attach = Attachment::Color0;
+                    break;
+                case GL_DEPTH_ATTACHMENT:
+                    attach = Attachment::Depth;
+                    break;
+                case GL_STENCIL_ATTACHMENT:
+                    attach = Attachment::Stencil;
+                    break;
+                default:
+                    break;
+            }
+
+            return attach;
+        }
 
         void SetAttachment(Attachment attachment, const Ref<GLObject>& obj)
         {
             m_attachments[(int) attachment] = obj;
         }
+
+        void GetAttachmentParameteriv(Attachment attachment, GLenum pname, GLint* params);
+        GLenum CheckStatus();
 
     private:
         WeakRef<GLObject> m_attachments[(int) Attachment::Count];

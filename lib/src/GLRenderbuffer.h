@@ -25,7 +25,8 @@ namespace sgl
     class GLRenderbuffer: public GLObject
     {
     public:
-        GLRenderbuffer():
+        GLRenderbuffer(GLuint id):
+            GLObject(id),
             m_width(0),
             m_height(0),
             m_internal_format(0),

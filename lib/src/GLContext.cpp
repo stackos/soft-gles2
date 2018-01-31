@@ -22,6 +22,7 @@
 #include "GLObject.h"
 #include "GLFramebuffer.h"
 #include "GLRenderbuffer.h"
+#include "GLTexture.h"
 
 #include "math/Mathf.h"
 #include "container/Map.h"
@@ -107,7 +108,7 @@ namespace sgl
             for (int i = 0; i < n; ++i)
             {
                 GLuint id = ++m_gen_id;
-                m_objects.Add(id, RefMake<T>());
+                m_objects.Add(id, RefMake<T>(id));
                 objs[i] = id;
             }
         }
@@ -163,12 +164,12 @@ namespace sgl
 
         void GenFramebuffers(GLsizei n, GLuint* framebuffers)
         {
-            GenObjects<GLFrameFbuffer>(n, framebuffers);
+            GenObjects<GLFramebuffer>(n, framebuffers);
         }
 
         void DeleteFramebuffers(GLsizei n, const GLuint* framebuffers)
         {
-            DeleteObjects<GLFrameFbuffer>(n, framebuffers, [this](const Ref<GLObject>& obj) {
+            DeleteObjects<GLFramebuffer>(n, framebuffers, [this](const Ref<GLObject>& obj) {
                 if (!m_current_fbo.expired() && m_current_fbo.lock() == obj)
                 {
                     m_current_fbo.reset();
@@ -178,7 +179,7 @@ namespace sgl
 
         GLboolean IsFramebuffer(GLuint framebuffer)
         {
-            return ObjectIs<GLFrameFbuffer>(framebuffer);
+            return ObjectIs<GLFramebuffer>(framebuffer);
         }
 
         void BindFramebuffer(GLenum target, GLuint framebuffer)
@@ -191,7 +192,7 @@ namespace sgl
                 }
                 else
                 {
-                    Ref<GLFrameFbuffer> fbo = ObjectGet<GLFrameFbuffer>(framebuffer);
+                    Ref<GLFramebuffer> fbo = ObjectGet<GLFramebuffer>(framebuffer);
                     if (fbo)
                     {
                         m_current_fbo = fbo;
@@ -208,30 +209,52 @@ namespace sgl
                 {
                     if (!m_current_fbo.expired())
                     {
-                        Ref<GLFrameFbuffer> fbo = m_current_fbo.lock();
+                        Ref<GLFramebuffer> fbo = m_current_fbo.lock();
                         Ref<GLRenderbuffer> rbo;
                         if (renderbuffer > 0)
                         {
                             rbo = ObjectGet<GLRenderbuffer>(renderbuffer);
                         }
 
-                        switch (attachment)
+                        GLFramebuffer::Attachment attach = fbo->GetAttachment(attachment);
+                        if (attach != GLFramebuffer::Attachment::None)
                         {
-                            case GL_COLOR_ATTACHMENT0:
-                                fbo->SetAttachment(GLFrameFbuffer::Attachment::Color0, rbo);
-                                break;
-                            case GL_DEPTH_ATTACHMENT:
-                                fbo->SetAttachment(GLFrameFbuffer::Attachment::Depth, rbo);
-                                break;
-                            case GL_STENCIL_ATTACHMENT:
-                                fbo->SetAttachment(GLFrameFbuffer::Attachment::Stencil, rbo);
-                                break;
-                            default:
-                                break;
+                            fbo->SetAttachment(attach, rbo);
                         }
                     }
                 }
             }
+        }
+
+        void GetFramebufferAttachmentParameteriv(GLenum target, GLenum attachment, GLenum pname, GLint* params)
+        {
+            if (target == GL_FRAMEBUFFER)
+            {
+                if (!m_current_fbo.expired())
+                {
+                    Ref<GLFramebuffer> fbo = m_current_fbo.lock();
+                    
+                    GLFramebuffer::Attachment attach = fbo->GetAttachment(attachment);
+                    if (attach != GLFramebuffer::Attachment::None)
+                    {
+                        fbo->GetAttachmentParameteriv(attach, pname, params);
+                    }
+                }
+            }
+        }
+
+        GLenum CheckFramebufferStatus(GLenum target)
+        {
+            if (target == GL_FRAMEBUFFER)
+            {
+                if (!m_current_fbo.expired())
+                {
+                    Ref<GLFramebuffer> fbo = m_current_fbo.lock();
+                    return fbo->CheckStatus();
+                }
+            }
+
+            return 0;
         }
 
         void GenRenderbuffers(GLsizei n, GLuint* renderbuffers)
@@ -891,7 +914,7 @@ namespace sgl
 
         Map<GLuint, Ref<GLObject>> m_objects;
         GLuint m_gen_id;
-        WeakRef<GLFrameFbuffer> m_current_fbo;
+        WeakRef<GLFramebuffer> m_current_fbo;
         WeakRef<GLRenderbuffer> m_current_rbo;
         int m_viewport_x;
         int m_viewport_y;
@@ -950,6 +973,8 @@ IMPLEMENT_VOID_GL_FUNC_2(DeleteFramebuffers, GLsizei, const GLuint*)
 IMPLEMENT_GL_FUNC_1(GLboolean, IsFramebuffer, GLuint)
 IMPLEMENT_VOID_GL_FUNC_2(BindFramebuffer, GLenum, GLuint)
 IMPLEMENT_VOID_GL_FUNC_4(FramebufferRenderbuffer, GLenum, GLenum, GLenum, GLuint)
+IMPLEMENT_VOID_GL_FUNC_4(GetFramebufferAttachmentParameteriv, GLenum, GLenum, GLenum, GLint*)
+IMPLEMENT_GL_FUNC_1(GLenum, CheckFramebufferStatus, GLenum)
 
 // Renderbuffer
 IMPLEMENT_VOID_GL_FUNC_2(GenRenderbuffers, GLsizei, GLuint*)
