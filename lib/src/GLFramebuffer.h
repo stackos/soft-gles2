@@ -18,13 +18,33 @@
 #pragma once
 
 #include "GLObject.h"
+#include "memory/Ref.h"
 
 namespace sgl
 {
+    class GLRenderbuffer;
     class GLFrameFbuffer: public GLObject
     {
     public:
+        enum class Attachment
+        {
+            Color0,
+            Depth,
+            Stencil,
+
+            Count
+        };
+
         GLFrameFbuffer() { }
+
         virtual ~GLFrameFbuffer() { }
+
+        void SetAttachment(Attachment attachment, const Ref<GLObject>& obj)
+        {
+            m_attachments[(int) attachment] = obj;
+        }
+
+    private:
+        WeakRef<GLObject> m_attachments[(int) Attachment::Count];
     };
 }
