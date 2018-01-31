@@ -18,13 +18,15 @@
 #define GL_APICALL __declspec(dllexport)
 
 #include "GLES2/gl2.h"
-
+#include "GLES2/gl2ext.h"
 #include "GLObject.h"
 #include "GLFramebuffer.h"
 #include "GLRenderbuffer.h"
 
 #include "math/Mathf.h"
 #include "container/Map.h"
+
+#include <functional>
 
 using namespace Viry3D;
 
@@ -99,51 +101,84 @@ namespace sgl
             }
         }
 
-        void GenFramebuffers(GLsizei n, GLuint* framebuffers)
+        template<class T>
+        void GenObjects(GLsizei n, GLuint* objs)
         {
             for (int i = 0; i < n; ++i)
             {
                 GLuint id = ++m_gen_id;
-                m_objects.Add(id, RefMake<GLFrameFbuffer>());
-                framebuffers[i] = id;
+                m_objects.Add(id, RefMake<T>());
+                objs[i] = id;
             }
         }
 
-        void DeleteFramebuffers(GLsizei n, const GLuint* framebuffers)
+        typedef std::function<void(const Ref<GLObject>&)> OnRemoveObject;
+
+        template<class T>
+        void DeleteObjects(GLsizei n, const GLuint* objs, OnRemoveObject on_remove)
         {
             for (int i = 0; i < n; ++i)
             {
                 Ref<GLObject>* find;
-                GLuint id = framebuffers[i];
+                GLuint id = objs[i];
                 if (m_objects.TryGet(id, &find))
                 {
-                    Ref<GLFrameFbuffer> fbo = RefCast<GLFrameFbuffer>(*find);
-                    if (fbo)
+                    Ref<T> obj = RefCast<T>(*find);
+                    if (obj)
                     {
                         m_objects.Remove(id);
 
-                        if (!m_current_fbo.expired() && m_current_fbo.lock() == fbo)
-                        {
-                            m_current_fbo.reset();
-                        }
+                        on_remove(obj);
                     }
                 }
             }
         }
 
-        GLboolean IsFramebuffer(GLuint framebuffer)
+        template<class T>
+        GLboolean ObjectIs(GLuint obj)
         {
             Ref<GLObject>* find;
-            if (m_objects.TryGet(framebuffer, &find))
+            if (m_objects.TryGet(obj, &find))
             {
-                Ref<GLFrameFbuffer> fbo = RefCast<GLFrameFbuffer>(*find);
-                if (fbo)
+                if (RefCast<T>(*find))
                 {
                     return GL_TRUE;
                 }
             }
 
             return GL_FALSE;
+        }
+
+        template<class T>
+        Ref<T> ObjectGet(GLuint obj)
+        {
+            Ref<GLObject>* find;
+            if (m_objects.TryGet(obj, &find))
+            {
+                return RefCast<T>(*find);
+            }
+
+            return Ref<T>();
+        }
+
+        void GenFramebuffers(GLsizei n, GLuint* framebuffers)
+        {
+            GenObjects<GLFrameFbuffer>(n, framebuffers);
+        }
+
+        void DeleteFramebuffers(GLsizei n, const GLuint* framebuffers)
+        {
+            DeleteObjects<GLFrameFbuffer>(n, framebuffers, [this](const Ref<GLObject>& obj) {
+                if (!m_current_fbo.expired() && m_current_fbo.lock() == obj)
+                {
+                    m_current_fbo.reset();
+                }
+            });
+        }
+
+        GLboolean IsFramebuffer(GLuint framebuffer)
+        {
+            return ObjectIs<GLFrameFbuffer>(framebuffer);
         }
 
         void BindFramebuffer(GLenum target, GLuint framebuffer)
@@ -156,13 +191,43 @@ namespace sgl
                 }
                 else
                 {
-                    Ref<GLObject>* find;
-                    if (m_objects.TryGet(framebuffer, &find))
+                    Ref<GLFrameFbuffer> fbo = ObjectGet<GLFrameFbuffer>(framebuffer);
+                    if (fbo)
                     {
-                        Ref<GLFrameFbuffer> fbo = RefCast<GLFrameFbuffer>(*find);
-                        if (fbo)
+                        m_current_fbo = fbo;
+                    }
+                }
+            }
+        }
+
+        void FramebufferRenderbuffer(GLenum target, GLenum attachment, GLenum renderbuffertarget, GLuint renderbuffer)
+        {
+            if (target == GL_FRAMEBUFFER)
+            {
+                if (renderbuffertarget == GL_RENDERBUFFER)
+                {
+                    if (!m_current_fbo.expired())
+                    {
+                        Ref<GLFrameFbuffer> fbo = m_current_fbo.lock();
+                        Ref<GLRenderbuffer> rbo;
+                        if (renderbuffer > 0)
                         {
-                            m_current_fbo = fbo;
+                            rbo = ObjectGet<GLRenderbuffer>(renderbuffer);
+                        }
+
+                        switch (attachment)
+                        {
+                            case GL_COLOR_ATTACHMENT0:
+                                fbo->SetAttachment(GLFrameFbuffer::Attachment::Color0, rbo);
+                                break;
+                            case GL_DEPTH_ATTACHMENT:
+                                fbo->SetAttachment(GLFrameFbuffer::Attachment::Depth, rbo);
+                                break;
+                            case GL_STENCIL_ATTACHMENT:
+                                fbo->SetAttachment(GLFrameFbuffer::Attachment::Stencil, rbo);
+                                break;
+                            default:
+                                break;
                         }
                     }
                 }
@@ -171,49 +236,22 @@ namespace sgl
 
         void GenRenderbuffers(GLsizei n, GLuint* renderbuffers)
         {
-            for (int i = 0; i < n; ++i)
-            {
-                GLuint id = ++m_gen_id;
-                m_objects.Add(id, RefMake<GLRenderbuffer>());
-                renderbuffers[i] = id;
-            }
+            GenObjects<GLRenderbuffer>(n, renderbuffers);
         }
 
         void DeleteRenderbuffers(GLsizei n, const GLuint* renderbuffers)
         {
-            for (int i = 0; i < n; ++i)
-            {
-                Ref<GLObject>* find;
-                GLuint id = renderbuffers[i];
-                if (m_objects.TryGet(id, &find))
+            DeleteObjects<GLRenderbuffer>(n, renderbuffers, [this](const Ref<GLObject>& obj) {
+                if (!m_current_rbo.expired() && m_current_rbo.lock() == obj)
                 {
-                    Ref<GLRenderbuffer> rbo = RefCast<GLRenderbuffer>(*find);
-                    if (rbo)
-                    {
-                        m_objects.Remove(id);
-
-                        if (!m_current_rbo.expired() && m_current_rbo.lock() == rbo)
-                        {
-                            m_current_rbo.reset();
-                        }
-                    }
+                    m_current_rbo.reset();
                 }
-            }
+            });
         }
 
         GLboolean IsRenderbuffer(GLuint renderbuffer)
         {
-            Ref<GLObject>* find;
-            if (m_objects.TryGet(renderbuffer, &find))
-            {
-                Ref<GLRenderbuffer> rbo = RefCast<GLRenderbuffer>(*find);
-                if (rbo)
-                {
-                    return GL_TRUE;
-                }
-            }
-
-            return GL_FALSE;
+            return ObjectIs<GLRenderbuffer>(renderbuffer);
         }
 
         void BindRenderbuffer(GLenum target, GLuint renderbuffer)
@@ -226,14 +264,67 @@ namespace sgl
                 }
                 else
                 {
-                    Ref<GLObject>* find;
-                    if (m_objects.TryGet(renderbuffer, &find))
+                    Ref<GLRenderbuffer> rbo = ObjectGet<GLRenderbuffer>(renderbuffer);
+                    if (rbo)
                     {
-                        Ref<GLRenderbuffer> rbo = RefCast<GLRenderbuffer>(*find);
-                        if (rbo)
-                        {
-                            m_current_rbo = rbo;
-                        }
+                        m_current_rbo = rbo;
+                    }
+                }
+            }
+        }
+
+        void RenderbufferStorage(GLenum target, GLenum internalformat, GLsizei width, GLsizei height)
+        {
+            if (target == GL_RENDERBUFFER)
+            {
+                if (!m_current_rbo.expired())
+                {
+                    Ref<GLRenderbuffer> rbo = m_current_rbo.lock();
+                    rbo->Storage(internalformat, width, height);
+                }
+            }
+        }
+
+        void GetRenderbufferParameteriv(GLenum target, GLenum pname, GLint *params)
+        {
+            if (target == GL_RENDERBUFFER)
+            {
+                if (!m_current_rbo.expired())
+                {
+                    Ref<GLRenderbuffer> rbo = m_current_rbo.lock();
+
+                    switch (pname)
+                    {
+                        case GL_RENDERBUFFER_WIDTH:
+                            *params = rbo->GetWidth();
+                            break;
+                        case GL_RENDERBUFFER_HEIGHT:
+                            *params = rbo->GetHeight();
+                            break;
+                        case GL_RENDERBUFFER_INTERNAL_FORMAT:
+                            *params = rbo->GetInternalFormat();
+                            break;
+                        case GL_RENDERBUFFER_RED_SIZE:
+                            *params = rbo->GetRedComponentSize();
+                            break;
+                        case GL_RENDERBUFFER_GREEN_SIZE:
+                            *params = rbo->GetGreenComponentSize();
+                            break;
+                        case GL_RENDERBUFFER_BLUE_SIZE:
+                            *params = rbo->GetBlueComponentSize();
+                            break;
+                        case GL_RENDERBUFFER_ALPHA_SIZE:
+                            *params = rbo->GetAlphaComponentSize();
+                            break;
+                        case GL_RENDERBUFFER_DEPTH_SIZE:
+                            *params = rbo->GetDepthSize();
+                            break;
+                        case GL_RENDERBUFFER_STENCIL_SIZE:
+                            *params = rbo->GetStencilSize();
+                            break;
+                        default:
+                            *params = 0;
+                            break;
                     }
                 }
             }
@@ -258,6 +349,11 @@ namespace sgl
         void ClearDepthf(GLfloat d)
         {
             m_clear_depth = d;
+        }
+
+        void ClearStencil(GLint s)
+        {
+            m_clear_stencil = s;
         }
 
         void Clear(GLbitfield mask)
@@ -295,6 +391,11 @@ namespace sgl
                         m_default_depth_buffer[i * m_default_buffer_width + j] = m_clear_depth;
                     }
                 }
+            }
+
+            if (mask & GL_STENCIL_BUFFER_BIT)
+            {
+                
             }
         }
 
@@ -757,7 +858,8 @@ namespace sgl
             m_clear_color_green(1.0f),
             m_clear_color_blue(1.0f),
             m_clear_color_alpha(1.0f),
-            m_clear_depth(1.0f)
+            m_clear_depth(1.0f),
+            m_clear_stencil(0)
         {
         }
 
@@ -800,6 +902,7 @@ namespace sgl
         float m_clear_color_blue;
         float m_clear_color_alpha;
         float m_clear_depth;
+        int m_clear_stencil; 
     };
 }
 
@@ -828,6 +931,10 @@ __declspec(dllexport) void set_gl_context_default_buffers(void* color_buffer, vo
     void GL_APIENTRY gl##func(t1 p1, t2 p2) { \
         gl->func(p1, p2); \
     }
+#define IMPLEMENT_VOID_GL_FUNC_3(func, t1, t2, t3) \
+    void GL_APIENTRY gl##func(t1 p1, t2 p2, t3 p3) { \
+        gl->func(p1, p2, p3); \
+    }
 #define IMPLEMENT_VOID_GL_FUNC_4(func, t1, t2, t3, t4) \
     void GL_APIENTRY gl##func(t1 p1, t2 p2, t3 p3, t4 p4) { \
         gl->func(p1, p2, p3, p4); \
@@ -842,12 +949,15 @@ IMPLEMENT_VOID_GL_FUNC_2(GenFramebuffers, GLsizei, GLuint*)
 IMPLEMENT_VOID_GL_FUNC_2(DeleteFramebuffers, GLsizei, const GLuint*)
 IMPLEMENT_GL_FUNC_1(GLboolean, IsFramebuffer, GLuint)
 IMPLEMENT_VOID_GL_FUNC_2(BindFramebuffer, GLenum, GLuint)
+IMPLEMENT_VOID_GL_FUNC_4(FramebufferRenderbuffer, GLenum, GLenum, GLenum, GLuint)
 
 // Renderbuffer
 IMPLEMENT_VOID_GL_FUNC_2(GenRenderbuffers, GLsizei, GLuint*)
 IMPLEMENT_VOID_GL_FUNC_2(DeleteRenderbuffers, GLsizei, const GLuint*)
 IMPLEMENT_GL_FUNC_1(GLboolean, IsRenderbuffer, GLuint)
 IMPLEMENT_VOID_GL_FUNC_2(BindRenderbuffer, GLenum, GLuint)
+IMPLEMENT_VOID_GL_FUNC_4(RenderbufferStorage, GLenum, GLenum, GLsizei, GLsizei)
+IMPLEMENT_VOID_GL_FUNC_3(GetRenderbufferParameteriv, GLenum, GLenum, GLint*)
 
 // Viewport
 IMPLEMENT_VOID_GL_FUNC_4(Viewport, GLint, GLint, GLsizei, GLsizei)
@@ -855,4 +965,5 @@ IMPLEMENT_VOID_GL_FUNC_4(Viewport, GLint, GLint, GLsizei, GLsizei)
 // Clear
 IMPLEMENT_VOID_GL_FUNC_4(ClearColor, GLfloat, GLfloat, GLfloat, GLfloat)
 IMPLEMENT_VOID_GL_FUNC_1(ClearDepthf, GLfloat)
+IMPLEMENT_VOID_GL_FUNC_1(ClearStencil, GLint)
 IMPLEMENT_VOID_GL_FUNC_1(Clear, GLbitfield)

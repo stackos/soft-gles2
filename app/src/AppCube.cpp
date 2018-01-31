@@ -27,23 +27,41 @@ public:
         glViewport(100, 100, 200, 200);
         glClearColor(1, 0, 0, 1);
         glClearDepthf(1);
+        glClearStencil(0);
 
-        glGenFramebuffers(1, &m_fbo);
-        glIsFramebuffer(m_fbo);
-        glBindFramebuffer(GL_FRAMEBUFFER, m_fbo);
+        // color rbo
+        glGenRenderbuffers(1, &m_rbo_color);
+        glBindRenderbuffer(GL_RENDERBUFFER, m_rbo_color);
+        glRenderbufferStorage(GL_RENDERBUFFER, GL_RGB565, 1280, 720);
         
-        glGenRenderbuffers(1, &m_rbo);
-        glIsRenderbuffer(m_rbo);
-        glBindRenderbuffer(GL_RENDERBUFFER, m_rbo);
-        //glRenderbufferStorage(GL_RENDERBUFFER, GL_RGB565, 1280, 720);
-        //GLint width;
-        //glGetRenderbufferParameteriv(GL_RENDERBUFFER, GL_RENDERBUFFER_WIDTH, &width);
+        // depth rbo
+        glGenRenderbuffers(1, &m_rbo_depth);
+        glBindRenderbuffer(GL_RENDERBUFFER, m_rbo_depth);
+        glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT16, 1280, 720);
 
-        //glFramebufferRenderbuffer
-        //glFramebufferTexture2D
+        // stencil rbo
+        glGenRenderbuffers(1, &m_rbo_stencil);
+        glBindRenderbuffer(GL_RENDERBUFFER, m_rbo_stencil);
+        glRenderbufferStorage(GL_RENDERBUFFER, GL_STENCIL_INDEX8, 1280, 720);
+
+        // fbo
+        glGenFramebuffers(1, &m_fbo);
+        glBindFramebuffer(GL_FRAMEBUFFER, m_fbo);
+
+        glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_RENDERBUFFER, m_rbo_color);
+        glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, m_rbo_depth);
+        glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_STENCIL_ATTACHMENT, GL_RENDERBUFFER, m_rbo_stencil);
+
+        // for test api
+        glIsRenderbuffer(m_rbo_color);
+        GLint width;
+        glGetRenderbufferParameteriv(GL_RENDERBUFFER, GL_RENDERBUFFER_WIDTH, &width);
+        glIsFramebuffer(m_fbo);
+
         //glGetFramebufferAttachmentParameteriv
         //glCheckFramebufferStatus
-        
+        //glFramebufferTexture2D
+
         //glGenTextures
         //glDeleteTextures
         //glIsTexture
@@ -66,16 +84,20 @@ public:
     virtual ~Renderer()
     {
         glDeleteFramebuffers(1, &m_fbo);
-        glDeleteRenderbuffers(1, &m_rbo);
+        glDeleteRenderbuffers(1, &m_rbo_color);
+        glDeleteRenderbuffers(1, &m_rbo_depth);
+        glDeleteRenderbuffers(1, &m_rbo_stencil);
     }
 
     void Draw()
     {
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
     }
 
     GLuint m_fbo;
-    GLuint m_rbo;
+    GLuint m_rbo_color;
+    GLuint m_rbo_depth;
+    GLuint m_rbo_stencil;
 };
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShowCmd)
