@@ -17,24 +17,8 @@
 
 #pragma once
 
-#include <memory>
-
 namespace sgl
 {
-#define SafeFree(p) \
-    if (p) \
-    { \
-        free(p); \
-        p = nullptr; \
-    }
-
-#define SafeDelete(p) \
-    if (p) \
-    { \
-        delete p; \
-        p = nullptr; \
-    }
-
     class GLObject
     {
     public:

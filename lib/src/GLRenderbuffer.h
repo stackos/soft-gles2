@@ -18,6 +18,7 @@
 #pragma once
 
 #include "GLObject.h"
+#include "memory/Memory.h"
 
 namespace sgl
 {
@@ -35,7 +36,7 @@ namespace sgl
 
         virtual ~GLRenderbuffer()
         {
-            SafeFree(m_buffer);
+            Viry3D::Memory::SafeFree(m_buffer);
         }
 
         void Storage(GLenum internalformat, GLsizei width, GLsizei height)
@@ -69,7 +70,7 @@ namespace sgl
                 m_height = height;
                 m_internal_format = format;
                 m_buffer_size = size;
-                m_buffer = (char*) realloc(m_buffer, size);
+                m_buffer = Viry3D::Memory::Realloc(m_buffer, size);
             }
         }
 

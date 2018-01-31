@@ -16,7 +16,10 @@
 */
 
 #include "DisplayWindows.h"
+#include "memory/Memory.h"
 #include <windowsx.h>
+
+using namespace Viry3D;
 
 __declspec(dllimport) void create_gl_context();
 __declspec(dllimport) void destroy_gl_context();
@@ -47,8 +50,8 @@ DisplayWindows::DisplayWindows(const std::string& name, int width, int height):
     m_buffer_size(0),
     m_bmi_buffer(nullptr)
 {
-    memset(m_color_buffers, 0, sizeof(m_color_buffers));
-    memset(m_depth_buffers, 0, sizeof(m_depth_buffers));
+    Memory::Zero(m_color_buffers, sizeof(m_color_buffers));
+    Memory::Zero(m_depth_buffers, sizeof(m_depth_buffers));
 
     this->CreateSystemWindow();
     this->CreateBuffers();
@@ -61,11 +64,11 @@ DisplayWindows::~DisplayWindows()
 {
     ReleaseDC(m_window, m_hdc);
 
-    free(m_color_buffers[0]);
-    free(m_color_buffers[1]);
-    free(m_depth_buffers[0]);
-    free(m_depth_buffers[1]);
-    free(m_bmi_buffer);
+    Memory::SafeFree(m_color_buffers[0]);
+    Memory::SafeFree(m_color_buffers[1]);
+    Memory::SafeFree(m_depth_buffers[0]);
+    Memory::SafeFree(m_depth_buffers[1]);
+    Memory::SafeFree(m_bmi_buffer);
 
     destroy_gl_context();
 }
@@ -150,20 +153,20 @@ void DisplayWindows::CreateBuffers()
     m_hdc = GetDC(m_window);
 
     m_buffer_size = m_width * m_height * 4;
-    m_color_buffers[0] = malloc(m_buffer_size);
-    m_color_buffers[1] = malloc(m_buffer_size);
-    m_depth_buffers[0] = malloc(m_buffer_size);
-    m_depth_buffers[1] = malloc(m_buffer_size);
-    memset(m_color_buffers[0], 0, m_buffer_size);
-    memset(m_color_buffers[1], 0, m_buffer_size);
-    memset(m_depth_buffers[0], 0, m_buffer_size);
-    memset(m_depth_buffers[1], 0, m_buffer_size);
+    m_color_buffers[0] = Memory::Alloc<void>(m_buffer_size);
+    m_color_buffers[1] = Memory::Alloc<void>(m_buffer_size);
+    m_depth_buffers[0] = Memory::Alloc<void>(m_buffer_size);
+    m_depth_buffers[1] = Memory::Alloc<void>(m_buffer_size);
+    Memory::Zero(m_color_buffers[0], m_buffer_size);
+    Memory::Zero(m_color_buffers[1], m_buffer_size);
+    Memory::Zero(m_depth_buffers[0], m_buffer_size);
+    Memory::Zero(m_depth_buffers[1], m_buffer_size);
 
     // setup bitmap info for blit
     int bmi_size = sizeof(BITMAPINFOHEADER) + sizeof(DWORD) * 3;
-    m_bmi_buffer = malloc(bmi_size);
+    m_bmi_buffer = Memory::Alloc<void>(bmi_size);
     BITMAPINFO* bmi = (BITMAPINFO*) m_bmi_buffer;
-    memset(bmi, 0, bmi_size);
+    Memory::Zero(bmi, bmi_size);
     bmi->bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
     bmi->bmiHeader.biWidth = m_width;
     bmi->bmiHeader.biHeight = m_height;
