@@ -86,10 +86,11 @@ namespace sgl
     class GLContext
     {
     public:
-        void SetDefaultBuffers(void* color_buffer, void* depth_buffer, int width, int height)
+        void SetDefaultBuffers(void* color_buffer, void* depth_buffer, void* stencil_buffer, int width, int height)
         {
             m_default_color_buffer = (unsigned char*) color_buffer;
             m_default_depth_buffer = (float*) depth_buffer;
+            m_default_stencil_buffer = (unsigned char*) stencil_buffer;
             m_default_buffer_width = width;
             m_default_buffer_height = height;
 
@@ -257,6 +258,69 @@ namespace sgl
             return 0;
         }
 
+        void ReadPixels(GLint x, GLint y, GLsizei width, GLsizei height, GLenum format, GLenum type, void *pixels)
+        {
+            unsigned char* color_buffer = m_default_color_buffer;
+            int buffer_width = m_default_buffer_width;
+            int buffer_height = m_default_buffer_height;
+
+            switch (format)
+            {
+                case GL_RGBA:
+                {
+                    switch (type)
+                    {
+                        case GL_UNSIGNED_BYTE:
+                            break;
+                        case GL_UNSIGNED_SHORT_5_6_5:
+                        case GL_UNSIGNED_SHORT_4_4_4_4:
+                        case GL_UNSIGNED_SHORT_5_5_5_1:
+                            return;
+                    }
+                    break;
+                }
+                case GL_ALPHA:
+                case GL_RGB:
+                    return;
+            }
+
+            if (!m_current_fbo.expired())
+            {
+                color_buffer = (unsigned char*) this->GetFramebufferAttachmentBuffer(GLFramebuffer::Attachment::Color0, buffer_width, buffer_height);
+            }
+
+            int* dest = (int*) pixels;
+            int* src = (int*) color_buffer;
+            for (int i = 0; i < height; ++i)
+            {
+                Memory::Copy(&dest[i * width], &src[(buffer_height - 1 - y - i) * buffer_width + x], width * 4);
+            }
+        }
+
+        void* GetFramebufferAttachmentBuffer(GLFramebuffer::Attachment attachment, int& width, int& height)
+        {
+            void* buffer = nullptr;
+
+            Ref<GLFramebuffer> fbo = m_current_fbo.lock();
+            GLint attached_type;
+            GLint attached_obj;
+            fbo->GetAttachmentParameteriv(attachment, GL_FRAMEBUFFER_ATTACHMENT_OBJECT_TYPE, &attached_type);
+            fbo->GetAttachmentParameteriv(attachment, GL_FRAMEBUFFER_ATTACHMENT_OBJECT_NAME, &attached_obj);
+            if (attached_type == GL_RENDERBUFFER)
+            {
+                Ref<GLRenderbuffer> rbo = ObjectGet<GLRenderbuffer>(attached_obj);
+                buffer = rbo->GetBuffer();
+                width = rbo->GetWidth();
+                height = rbo->GetHeight();
+            }
+            else if (attached_type == GL_TEXTURE)
+            {
+                //TODO: render to texture
+            }
+
+            return buffer;
+        }
+
         void GenRenderbuffers(GLsizei n, GLuint* renderbuffers)
         {
             GenObjects<GLRenderbuffer>(n, renderbuffers);
@@ -386,6 +450,18 @@ namespace sgl
             int width = m_viewport_width;
             int height = m_viewport_height;
 
+            unsigned char* color_buffer = m_default_color_buffer;
+            float* depth_buffer = m_default_depth_buffer;
+            unsigned char* stencil_buffer = m_default_stencil_buffer;
+            int buffer_width = m_default_buffer_width;
+            int buffer_height = m_default_buffer_height;
+
+            if (!m_current_fbo.expired())
+            {
+                color_buffer = (unsigned char*) this->GetFramebufferAttachmentBuffer(GLFramebuffer::Attachment::Color0, buffer_width, buffer_height);
+                depth_buffer = (float*) this->GetFramebufferAttachmentBuffer(GLFramebuffer::Attachment::Depth, buffer_width, buffer_height);
+            }
+
             if (mask & GL_COLOR_BUFFER_BIT)
             {
                 unsigned char r = FloatToColorByte(m_clear_color_red);
@@ -393,32 +469,38 @@ namespace sgl
                 unsigned char b = FloatToColorByte(m_clear_color_blue);
                 unsigned char a = FloatToColorByte(m_clear_color_alpha);
 
-                for (int i = y; i < y + height; ++i)
+                for (int i = y; i < y + height && i < buffer_height; ++i)
                 {
-                    for (int j = x; j < x + width; ++j)
+                    for (int j = x; j < x + width && j < buffer_width; ++j)
                     {
-                        m_default_color_buffer[i * m_default_buffer_width * 4 + j * 4 + 0] = r;
-                        m_default_color_buffer[i * m_default_buffer_width * 4 + j * 4 + 1] = g;
-                        m_default_color_buffer[i * m_default_buffer_width * 4 + j * 4 + 2] = b;
-                        m_default_color_buffer[i * m_default_buffer_width * 4 + j * 4 + 3] = a;
+                        color_buffer[i * buffer_width * 4 + j * 4 + 0] = r;
+                        color_buffer[i * buffer_width * 4 + j * 4 + 1] = g;
+                        color_buffer[i * buffer_width * 4 + j * 4 + 2] = b;
+                        color_buffer[i * buffer_width * 4 + j * 4 + 3] = a;
                     }
                 }
             }
 
             if (mask & GL_DEPTH_BUFFER_BIT)
             {
-                for (int i = y; i < y + height; ++i)
+                for (int i = y; i < y + height && i < buffer_height; ++i)
                 {
-                    for (int j = x; j < x + width; ++j)
+                    for (int j = x; j < x + width && j < buffer_width; ++j)
                     {
-                        m_default_depth_buffer[i * m_default_buffer_width + j] = m_clear_depth;
+                        depth_buffer[i * buffer_width + j] = m_clear_depth;
                     }
                 }
             }
 
             if (mask & GL_STENCIL_BUFFER_BIT)
             {
-                
+                for (int i = y; i < y + height && i < buffer_height; ++i)
+                {
+                    for (int j = x; j < x + width && j < buffer_width; ++j)
+                    {
+                        stencil_buffer[i * buffer_width + j] = (unsigned char) m_clear_stencil;
+                    }
+                }
             }
         }
 
@@ -870,6 +952,7 @@ namespace sgl
         GLContext():
             m_default_color_buffer(nullptr),
             m_default_depth_buffer(nullptr),
+            m_default_stencil_buffer(nullptr),
             m_default_buffer_width(0),
             m_default_buffer_height(0),
             m_gen_id(0),
@@ -909,6 +992,7 @@ namespace sgl
     private:
         unsigned char* m_default_color_buffer;
         float* m_default_depth_buffer;
+        unsigned char* m_default_stencil_buffer;
         int m_default_buffer_width;
         int m_default_buffer_height;
 
@@ -941,9 +1025,9 @@ __declspec(dllexport) void destroy_gl_context()
     gl.reset();
 }
 
-__declspec(dllexport) void set_gl_context_default_buffers(void* color_buffer, void* depth_buffer, int width, int height)
+__declspec(dllexport) void set_gl_context_default_buffers(void* color_buffer, void* depth_buffer, void* stencil_buffer, int width, int height)
 {
-    gl->SetDefaultBuffers(color_buffer, depth_buffer, width, height);
+    gl->SetDefaultBuffers(color_buffer, depth_buffer, stencil_buffer, width, height);
 }
 
 #define IMPLEMENT_VOID_GL_FUNC_1(func, t1) \
@@ -962,6 +1046,10 @@ __declspec(dllexport) void set_gl_context_default_buffers(void* color_buffer, vo
     void GL_APIENTRY gl##func(t1 p1, t2 p2, t3 p3, t4 p4) { \
         gl->func(p1, p2, p3, p4); \
     }
+#define IMPLEMENT_VOID_GL_FUNC_7(func, t1, t2, t3, t4, t5, t6, t7) \
+    void GL_APIENTRY gl##func(t1 p1, t2 p2, t3 p3, t4 p4, t5 p5, t6 p6, t7 p7) { \
+        gl->func(p1, p2, p3, p4, p5, p6, p7); \
+    }
 #define IMPLEMENT_GL_FUNC_1(ret, func, t1) \
     ret GL_APIENTRY gl##func(t1 p1) { \
         return gl->func(p1); \
@@ -975,6 +1063,7 @@ IMPLEMENT_VOID_GL_FUNC_2(BindFramebuffer, GLenum, GLuint)
 IMPLEMENT_VOID_GL_FUNC_4(FramebufferRenderbuffer, GLenum, GLenum, GLenum, GLuint)
 IMPLEMENT_VOID_GL_FUNC_4(GetFramebufferAttachmentParameteriv, GLenum, GLenum, GLenum, GLint*)
 IMPLEMENT_GL_FUNC_1(GLenum, CheckFramebufferStatus, GLenum)
+IMPLEMENT_VOID_GL_FUNC_7(ReadPixels, GLint, GLint, GLsizei, GLsizei, GLenum, GLenum, void*)
 
 // Renderbuffer
 IMPLEMENT_VOID_GL_FUNC_2(GenRenderbuffers, GLsizei, GLuint*)

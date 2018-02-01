@@ -17,13 +17,14 @@
 
 #include "DisplayWindows.h"
 #include "memory/Memory.h"
+#include "GLES2/gl2.h"
 #include <windowsx.h>
 
 using namespace Viry3D;
 
 __declspec(dllimport) void create_gl_context();
 __declspec(dllimport) void destroy_gl_context();
-__declspec(dllimport) void set_gl_context_default_buffers(void* color_buffer, void* depth_buffer, int width, int height);
+__declspec(dllimport) void set_gl_context_default_buffers(void* color_buffer, void* depth_buffer, void* stencil_buffer, int width, int height);
 
 LRESULT CALLBACK win_proc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
@@ -52,12 +53,13 @@ DisplayWindows::DisplayWindows(const std::string& name, int width, int height):
 {
     Memory::Zero(m_color_buffers, sizeof(m_color_buffers));
     Memory::Zero(m_depth_buffers, sizeof(m_depth_buffers));
+    Memory::Zero(m_stencil_buffers, sizeof(m_stencil_buffers));
 
     this->CreateSystemWindow();
     this->CreateBuffers();
 
     create_gl_context();
-    set_gl_context_default_buffers(m_color_buffers[m_front_buffer], m_depth_buffers[m_front_buffer], m_width, m_height);
+    set_gl_context_default_buffers(m_color_buffers[m_front_buffer], m_depth_buffers[m_front_buffer], m_stencil_buffers[m_front_buffer], m_width, m_height);
 }
 
 DisplayWindows::~DisplayWindows()
@@ -68,6 +70,8 @@ DisplayWindows::~DisplayWindows()
     Memory::SafeFree(m_color_buffers[1]);
     Memory::SafeFree(m_depth_buffers[0]);
     Memory::SafeFree(m_depth_buffers[1]);
+    Memory::SafeFree(m_stencil_buffers[0]);
+    Memory::SafeFree(m_stencil_buffers[1]);
     Memory::SafeFree(m_bmi_buffer);
 
     destroy_gl_context();
@@ -157,10 +161,14 @@ void DisplayWindows::CreateBuffers()
     m_color_buffers[1] = Memory::Alloc<void>(m_buffer_size);
     m_depth_buffers[0] = Memory::Alloc<void>(m_buffer_size);
     m_depth_buffers[1] = Memory::Alloc<void>(m_buffer_size);
+    m_stencil_buffers[0] = Memory::Alloc<void>(m_buffer_size / 4);
+    m_stencil_buffers[1] = Memory::Alloc<void>(m_buffer_size / 4);
     Memory::Zero(m_color_buffers[0], m_buffer_size);
     Memory::Zero(m_color_buffers[1], m_buffer_size);
     Memory::Zero(m_depth_buffers[0], m_buffer_size);
     Memory::Zero(m_depth_buffers[1], m_buffer_size);
+    Memory::Zero(m_stencil_buffers[0], m_buffer_size / 4);
+    Memory::Zero(m_stencil_buffers[1], m_buffer_size / 4);
 
     // setup bitmap info for blit
     int bmi_size = sizeof(BITMAPINFOHEADER) + sizeof(DWORD) * 3;
@@ -193,5 +201,5 @@ void DisplayWindows::SwapBuffers()
     // swap front and back buffer
     m_front_buffer = (m_front_buffer + 1) % 2;
 
-    set_gl_context_default_buffers(m_color_buffers[m_front_buffer], m_depth_buffers[m_front_buffer], m_width, m_height);
+    set_gl_context_default_buffers(m_color_buffers[m_front_buffer], m_depth_buffers[m_front_buffer], m_stencil_buffers[m_front_buffer], m_width, m_height);
 }

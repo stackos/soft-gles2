@@ -40,6 +40,7 @@ protected:
     HDC m_hdc;
     void* m_color_buffers[2];
     void* m_depth_buffers[2];
+    void* m_stencil_buffers[2];
     int m_front_buffer;
     int m_buffer_size;
     void* m_bmi_buffer;

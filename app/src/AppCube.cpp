@@ -53,6 +53,12 @@ public:
         glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_STENCIL_ATTACHMENT, GL_RENDERBUFFER, m_rbo_stencil);
 
         GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+        if (status == GL_FRAMEBUFFER_COMPLETE)
+        {
+            // frame buffer status ok
+        }
+
+        //glCreateShader
 
         // for test api
         glIsRenderbuffer(m_rbo_color);
@@ -64,8 +70,6 @@ public:
         GLint name;
         glGetFramebufferAttachmentParameteriv(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_FRAMEBUFFER_ATTACHMENT_OBJECT_NAME, &name);
 
-        //TODO: clear in framebuffer, then read pixels for present
-        //glReadPixels
         //glFramebufferTexture2D
 
         //glGenTextures
@@ -85,6 +89,9 @@ public:
         //glTexSubImage2D
         //glCompressedTexImage2D
         //glCompressedTexSubImage2D
+
+        // set to default frame buffer
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
     }
 
     virtual ~Renderer()

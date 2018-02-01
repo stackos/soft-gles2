@@ -22,6 +22,8 @@
 
 namespace sgl
 {
+    class GLContext;
+
     class GLFramebuffer: public GLObject
     {
     public:

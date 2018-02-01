@@ -84,6 +84,7 @@ namespace sgl
         int GetAlphaComponentSize() const { return 8; }
         int GetDepthSize() const { return 32; }
         int GetStencilSize() const { return 8; }
+        char* GetBuffer() const { return m_buffer; }
 
     private:
         int m_width;
