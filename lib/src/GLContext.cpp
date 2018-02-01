@@ -23,6 +23,7 @@
 #include "GLFramebuffer.h"
 #include "GLRenderbuffer.h"
 #include "GLTexture.h"
+#include "GLShader.h"
 
 #include "math/Mathf.h"
 #include "container/Map.h"
@@ -130,7 +131,10 @@ namespace sgl
                     {
                         m_objects.Remove(id);
 
-                        on_remove(obj);
+                        if (on_remove)
+                        {
+                            on_remove(obj);
+                        }
                     }
                 }
             }
@@ -165,12 +169,12 @@ namespace sgl
 
         void GenFramebuffers(GLsizei n, GLuint* framebuffers)
         {
-            GenObjects<GLFramebuffer>(n, framebuffers);
+            this->GenObjects<GLFramebuffer>(n, framebuffers);
         }
 
         void DeleteFramebuffers(GLsizei n, const GLuint* framebuffers)
         {
-            DeleteObjects<GLFramebuffer>(n, framebuffers, [this](const Ref<GLObject>& obj) {
+            this->DeleteObjects<GLFramebuffer>(n, framebuffers, [this](const Ref<GLObject>& obj) {
                 if (!m_current_fbo.expired() && m_current_fbo.lock() == obj)
                 {
                     m_current_fbo.reset();
@@ -180,7 +184,7 @@ namespace sgl
 
         GLboolean IsFramebuffer(GLuint framebuffer)
         {
-            return ObjectIs<GLFramebuffer>(framebuffer);
+            return this->ObjectIs<GLFramebuffer>(framebuffer);
         }
 
         void BindFramebuffer(GLenum target, GLuint framebuffer)
@@ -193,7 +197,7 @@ namespace sgl
                 }
                 else
                 {
-                    Ref<GLFramebuffer> fbo = ObjectGet<GLFramebuffer>(framebuffer);
+                    Ref<GLFramebuffer> fbo = this->ObjectGet<GLFramebuffer>(framebuffer);
                     if (fbo)
                     {
                         m_current_fbo = fbo;
@@ -214,7 +218,7 @@ namespace sgl
                         Ref<GLRenderbuffer> rbo;
                         if (renderbuffer > 0)
                         {
-                            rbo = ObjectGet<GLRenderbuffer>(renderbuffer);
+                            rbo = this->ObjectGet<GLRenderbuffer>(renderbuffer);
                         }
 
                         GLFramebuffer::Attachment attach = fbo->GetAttachment(attachment);
@@ -258,7 +262,7 @@ namespace sgl
             return 0;
         }
 
-        void ReadPixels(GLint x, GLint y, GLsizei width, GLsizei height, GLenum format, GLenum type, void *pixels)
+        void ReadPixels(GLint x, GLint y, GLsizei width, GLsizei height, GLenum format, GLenum type, void* pixels)
         {
             unsigned char* color_buffer = m_default_color_buffer;
             int buffer_width = m_default_buffer_width;
@@ -308,7 +312,7 @@ namespace sgl
             fbo->GetAttachmentParameteriv(attachment, GL_FRAMEBUFFER_ATTACHMENT_OBJECT_NAME, &attached_obj);
             if (attached_type == GL_RENDERBUFFER)
             {
-                Ref<GLRenderbuffer> rbo = ObjectGet<GLRenderbuffer>(attached_obj);
+                Ref<GLRenderbuffer> rbo = this->ObjectGet<GLRenderbuffer>(attached_obj);
                 buffer = rbo->GetBuffer();
                 width = rbo->GetWidth();
                 height = rbo->GetHeight();
@@ -323,12 +327,12 @@ namespace sgl
 
         void GenRenderbuffers(GLsizei n, GLuint* renderbuffers)
         {
-            GenObjects<GLRenderbuffer>(n, renderbuffers);
+            this->GenObjects<GLRenderbuffer>(n, renderbuffers);
         }
 
         void DeleteRenderbuffers(GLsizei n, const GLuint* renderbuffers)
         {
-            DeleteObjects<GLRenderbuffer>(n, renderbuffers, [this](const Ref<GLObject>& obj) {
+            this->DeleteObjects<GLRenderbuffer>(n, renderbuffers, [this](const Ref<GLObject>& obj) {
                 if (!m_current_rbo.expired() && m_current_rbo.lock() == obj)
                 {
                     m_current_rbo.reset();
@@ -338,7 +342,7 @@ namespace sgl
 
         GLboolean IsRenderbuffer(GLuint renderbuffer)
         {
-            return ObjectIs<GLRenderbuffer>(renderbuffer);
+            return this->ObjectIs<GLRenderbuffer>(renderbuffer);
         }
 
         void BindRenderbuffer(GLenum target, GLuint renderbuffer)
@@ -351,7 +355,7 @@ namespace sgl
                 }
                 else
                 {
-                    Ref<GLRenderbuffer> rbo = ObjectGet<GLRenderbuffer>(renderbuffer);
+                    Ref<GLRenderbuffer> rbo = this->ObjectGet<GLRenderbuffer>(renderbuffer);
                     if (rbo)
                     {
                         m_current_rbo = rbo;
@@ -372,7 +376,7 @@ namespace sgl
             }
         }
 
-        void GetRenderbufferParameteriv(GLenum target, GLenum pname, GLint *params)
+        void GetRenderbufferParameteriv(GLenum target, GLenum pname, GLint* params)
         {
             if (target == GL_RENDERBUFFER)
             {
@@ -460,6 +464,7 @@ namespace sgl
             {
                 color_buffer = (unsigned char*) this->GetFramebufferAttachmentBuffer(GLFramebuffer::Attachment::Color0, buffer_width, buffer_height);
                 depth_buffer = (float*) this->GetFramebufferAttachmentBuffer(GLFramebuffer::Attachment::Depth, buffer_width, buffer_height);
+                stencil_buffer = (unsigned char*) this->GetFramebufferAttachmentBuffer(GLFramebuffer::Attachment::Stencil, buffer_width, buffer_height);
             }
 
             if (mask & GL_COLOR_BUFFER_BIT)
@@ -501,6 +506,48 @@ namespace sgl
                         stencil_buffer[i * buffer_width + j] = (unsigned char) m_clear_stencil;
                     }
                 }
+            }
+        }
+
+        GLuint CreateShader(GLenum type)
+        {
+            GLuint shader = 0;
+
+            if (type == GL_VERTEX_SHADER || type == GL_FRAGMENT_SHADER)
+            {
+                this->GenObjects<GLShader>(1, &shader);
+                Ref<GLShader> obj = this->ObjectGet<GLShader>(shader);
+                obj->SetType(type);
+            }
+
+            return shader;
+        }
+
+        void DeleteShader(GLuint shader)
+        {
+            this->DeleteObjects<GLShader>(1, &shader, nullptr);
+        }
+
+        GLboolean IsShader(GLuint shader)
+        {
+            return this->ObjectIs<GLShader>(shader);
+        }
+
+        void ShaderSource(GLuint shader, GLsizei count, const GLchar* const* string, const GLint* length)
+        {
+            Ref<GLShader> obj = this->ObjectGet<GLShader>(shader);
+            if (obj)
+            {
+                obj->SetSource(count, string, length);
+            }
+        }
+
+        void GetShaderSource(GLuint shader, GLsizei bufSize, GLsizei* length, GLchar* source)
+        {
+            Ref<GLShader> obj = this->ObjectGet<GLShader>(shader);
+            if (obj)
+            {
+                obj->GetSource(bufSize, length, source);
             }
         }
 
@@ -1030,6 +1077,16 @@ __declspec(dllexport) void set_gl_context_default_buffers(void* color_buffer, vo
     gl->SetDefaultBuffers(color_buffer, depth_buffer, stencil_buffer, width, height);
 }
 
+#define NOT_IMPLEMENT_VOID_GL_FUNC(func) \
+    void GL_APIENTRY gl##func { \
+    }
+#define NOT_IMPLEMENT_GL_FUNC(ret, func) \
+    ret GL_APIENTRY gl##func { \
+    }
+#define IMPLEMENT_VOID_GL_FUNC_0(func) \
+    void GL_APIENTRY gl##func() { \
+        gl->func(); \
+    }
 #define IMPLEMENT_VOID_GL_FUNC_1(func, t1) \
     void GL_APIENTRY gl##func(t1 p1) { \
         gl->func(p1); \
@@ -1045,6 +1102,10 @@ __declspec(dllexport) void set_gl_context_default_buffers(void* color_buffer, vo
 #define IMPLEMENT_VOID_GL_FUNC_4(func, t1, t2, t3, t4) \
     void GL_APIENTRY gl##func(t1 p1, t2 p2, t3 p3, t4 p4) { \
         gl->func(p1, p2, p3, p4); \
+    }
+#define IMPLEMENT_VOID_GL_FUNC_5(func, t1, t2, t3, t4, t5) \
+    void GL_APIENTRY gl##func(t1 p1, t2 p2, t3 p3, t4 p4, t5 p5) { \
+        gl->func(p1, p2, p3, p4, p5); \
     }
 #define IMPLEMENT_VOID_GL_FUNC_7(func, t1, t2, t3, t4, t5, t6, t7) \
     void GL_APIENTRY gl##func(t1 p1, t2 p2, t3 p3, t4 p4, t5 p5, t6 p6, t7 p7) { \
@@ -1081,3 +1142,13 @@ IMPLEMENT_VOID_GL_FUNC_4(ClearColor, GLfloat, GLfloat, GLfloat, GLfloat)
 IMPLEMENT_VOID_GL_FUNC_1(ClearDepthf, GLfloat)
 IMPLEMENT_VOID_GL_FUNC_1(ClearStencil, GLint)
 IMPLEMENT_VOID_GL_FUNC_1(Clear, GLbitfield)
+
+// Shader
+IMPLEMENT_GL_FUNC_1(GLuint, CreateShader, GLenum)
+IMPLEMENT_VOID_GL_FUNC_1(DeleteShader, GLuint)
+IMPLEMENT_GL_FUNC_1(GLboolean, IsShader, GLuint)
+IMPLEMENT_VOID_GL_FUNC_4(ShaderSource, GLuint, GLsizei, const GLchar* const*, const GLint*)
+IMPLEMENT_VOID_GL_FUNC_4(GetShaderSource, GLuint, GLsizei, GLsizei*, GLchar*)
+NOT_IMPLEMENT_VOID_GL_FUNC(ShaderBinary(GLsizei, const GLuint*, GLenum binaryformat, const void*, GLsizei))
+NOT_IMPLEMENT_VOID_GL_FUNC(ReleaseShaderCompiler())
+NOT_IMPLEMENT_VOID_GL_FUNC(GetShaderPrecisionFormat(GLenum, GLenum, GLint*, GLint*))

@@ -58,17 +58,63 @@ public:
             // frame buffer status ok
         }
 
-        //glCreateShader
+        GLuint vs = glCreateShader(GL_VERTEX_SHADER);
+        const char* vs_src = "\
+attribute vec4 a_position;\
+attribute vec2 a_uv;\
+attribute vec4 a_color;\
+varying vec2 v_uv;\
+varying vec4 v_color;\
+void vs_main()\
+{\
+    gl_Position = a_position;\
+    v_uv = a_uv;\
+    v_color = a_color;\
+}";
+        glShaderSource(vs, 1, (const GLchar* const*) &vs_src, nullptr);
+        
+        GLuint fs = glCreateShader(GL_FRAGMENT_SHADER);
+        const char* ps_src = "\
+precision highp float;\
+uniform sampler2D u_tex;\
+varying vec2 v_uv;\
+varying vec4 v_color;\
+void ps_main()\
+{\
+    gl_FragColor = texture2D(u_tex, v_uv) * v_color;\
+}";
+        glShaderSource(vs, 1, (const GLchar* const*) &vs_src, nullptr);
 
         // for test api
-        glIsRenderbuffer(m_rbo_color);
-        GLint width;
-        glGetRenderbufferParameteriv(GL_RENDERBUFFER, GL_RENDERBUFFER_WIDTH, &width);
-        glIsFramebuffer(m_fbo);
-        GLint type;
-        glGetFramebufferAttachmentParameteriv(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_FRAMEBUFFER_ATTACHMENT_OBJECT_TYPE, &type);
-        GLint name;
-        glGetFramebufferAttachmentParameteriv(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_FRAMEBUFFER_ATTACHMENT_OBJECT_NAME, &name);
+        {
+            glIsRenderbuffer(m_rbo_color);
+            GLint width;
+            glGetRenderbufferParameteriv(GL_RENDERBUFFER, GL_RENDERBUFFER_WIDTH, &width);
+
+            glIsFramebuffer(m_fbo);
+            GLint type;
+            glGetFramebufferAttachmentParameteriv(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_FRAMEBUFFER_ATTACHMENT_OBJECT_TYPE, &type);
+            GLint name;
+            glGetFramebufferAttachmentParameteriv(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_FRAMEBUFFER_ATTACHMENT_OBJECT_NAME, &name);
+
+            glIsShader(vs);
+
+            char buffer[1024];
+            glGetShaderSource(vs, 1024, nullptr, buffer);
+            glShaderBinary(0, nullptr, 0, nullptr, 0);
+            glReleaseShaderCompiler();
+            glGetShaderPrecisionFormat(0, 0, nullptr, nullptr);
+        }
+
+        //glCompileShader
+        //glGetShaderiv
+        //glGetShaderInfoLog
+        
+        //glCreateProgram
+        //glDeleteProgram
+        //glAttachShader
+        //glDetachShader
+        //glGetAttachedShaders
 
         //glFramebufferTexture2D
 
@@ -89,6 +135,9 @@ public:
         //glTexSubImage2D
         //glCompressedTexImage2D
         //glCompressedTexSubImage2D
+
+        glDeleteShader(vs);
+        glDeleteShader(fs);
 
         // set to default frame buffer
         glBindFramebuffer(GL_FRAMEBUFFER, 0);

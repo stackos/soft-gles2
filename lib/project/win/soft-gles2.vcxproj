@@ -22,6 +22,7 @@
     <ClCompile Include="..\..\src\Debug.cpp" />
     <ClCompile Include="..\..\src\GLContext.cpp" />
     <ClCompile Include="..\..\src\GLFramebuffer.cpp" />
+    <ClCompile Include="..\..\src\GLShader.cpp" />
     <ClCompile Include="..\..\src\graphics\Image.cpp" />
     <ClCompile Include="..\..\src\io\Directory.cpp" />
     <ClCompile Include="..\..\src\io\File.cpp" />
@@ -81,6 +82,7 @@
     <ClInclude Include="..\..\src\GLFramebuffer.h" />
     <ClInclude Include="..\..\src\GLObject.h" />
     <ClInclude Include="..\..\src\GLRenderbuffer.h" />
+    <ClInclude Include="..\..\src\GLShader.h" />
     <ClInclude Include="..\..\src\GLTexture.h" />
     <ClInclude Include="..\..\src\graphics\Image.h" />
     <ClInclude Include="..\..\src\io\Directory.h" />

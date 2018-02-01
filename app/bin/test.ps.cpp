@@ -1,5 +1,9 @@
 #include <memory.h>
 #define DLL_EXPORT extern "C" _declspec(dllexport)
+#define precision
+#define highp
+#define mediump
+#define lowp
 #define uniform static
 #define attribute static
 #define varying static
@@ -85,6 +89,8 @@ static vec4 texture2D(const sampler2D& sampler, const vec2& uv)
 //
 // shader begin
 //
+precision highp float;
+
 uniform sampler2D u_tex;
 
 varying vec2 v_uv;

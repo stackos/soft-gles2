@@ -183,6 +183,9 @@
     <ClCompile Include="..\..\src\GLFramebuffer.cpp">
       <Filter>src</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\src\GLShader.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\src\math\Bounds.h">
@@ -330,6 +333,9 @@
       <Filter>src</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\GLTexture.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\GLShader.h">
       <Filter>src</Filter>
     </ClInclude>
   </ItemGroup>
