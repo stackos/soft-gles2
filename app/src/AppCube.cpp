@@ -60,29 +60,29 @@ public:
 
         GLuint vs = glCreateShader(GL_VERTEX_SHADER);
         const char* vs_src = "\
-attribute vec4 a_position;\
-attribute vec2 a_uv;\
-attribute vec4 a_color;\
-varying vec2 v_uv;\
-varying vec4 v_color;\
-void main()\
-{\
-    gl_Position = a_position;\
-    v_uv = a_uv;\
-    v_color = a_color;\
+attribute vec4 a_position;\n\
+attribute vec2 a_uv;\n\
+attribute vec4 a_color;\n\
+varying vec2 v_uv;\n\
+varying vec4 v_color;\n\
+void main()\n\
+{\n\
+    gl_Position = a_position;\n\
+    v_uv = a_uv;\n\
+    v_color = a_color;\n\
 }";
         glShaderSource(vs, 1, (const GLchar* const*) &vs_src, nullptr);
         glCompileShader(vs);
 
         GLuint fs = glCreateShader(GL_FRAGMENT_SHADER);
         const char* ps_src = "\
-precision highp float;\
-uniform sampler2D u_tex;\
-varying vec2 v_uv;\
-varying vec4 v_color;\
-void main()\
-{\
-    gl_FragColor = texture2D(u_tex, v_uv) * v_color;\
+precision highp float;\n\
+uniform sampler2D u_tex;\n\
+varying vec2 v_uv;\n\
+varying vec4 v_color;\n\
+void main()\n\
+{\n\
+    gl_FragColor = texture2D(u_tex, v_uv) * v_color;\n\
 }";
         glShaderSource(fs, 1, (const GLchar* const*) &ps_src, nullptr);
         glCompileShader(fs);

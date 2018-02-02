@@ -7,6 +7,16 @@
 #define uniform static
 #define attribute static
 #define varying static
+#define VAR_SETTER(var) \
+    DLL_EXPORT void set_##var(void* p, int size) \
+    { \
+        memcpy(&var, p, size); \
+    }
+#define VAR_GETTER(var) \
+    DLL_EXPORT void* get_##var() \
+    { \
+        return &var; \
+    }
 
 struct vec2
 {
@@ -95,23 +105,9 @@ void vs_main()
 // shader end
 //
 
-#define VAR_SETTER(var) \
-    DLL_EXPORT void set_##var(void* p, int size) \
-    { \
-        memcpy(&var, p, size); \
-    }
-#define VAR_GETTER(var) \
-    DLL_EXPORT void* get_##var() \
-    { \
-        return &var; \
-    }
-#define UNIFORM_SETTER VAR_SETTER
-#define ATTRIBUTE_SETTER VAR_SETTER
-#define VARYING_GETTER VAR_GETTER
-
-ATTRIBUTE_SETTER(a_position)
-ATTRIBUTE_SETTER(a_uv)
-ATTRIBUTE_SETTER(a_color)
+VAR_SETTER(a_position)
+VAR_SETTER(a_uv)
+VAR_SETTER(a_color)
 VAR_GETTER(gl_Position)
-VARYING_GETTER(v_uv)
-VARYING_GETTER(v_color)
+VAR_GETTER(v_uv)
+VAR_GETTER(v_color)

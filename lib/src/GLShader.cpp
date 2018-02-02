@@ -81,17 +81,88 @@ namespace sgl
         String GenTempSource()
         {
             String temp_file;
-            String src;
+            String src = p->m_source;
+            src = src.Replace("\t", " ").Replace("\r", " ").Replace("\n", " ");
+            Vector<String> sentences = src.Split(";", true);
+            Vector<String> gets;
+            Vector<String> sets;
+
+            for (int i = 0; i < sentences.Size(); ++i)
+            {
+                const String& s = sentences[i];
+                Vector<String> words = s.Split(" ", true);
+
+                if (p->m_type == GL_VERTEX_SHADER)
+                {
+                    if (words[0] == "uniform")
+                    {
+                        sets.Add(words[2]);
+                    }
+                    else if (words[0] == "attribute")
+                    {
+                        sets.Add(words[2]);
+                    }
+                    else if (words[0] == "varying")
+                    {
+                        gets.Add(words[2]);
+                    }
+                    else if (s.Contains(" main("))
+                    {
+                        sentences[i] = "DLL_EXPORT " + s.Replace(" main(", " vs_main(");
+                    }
+                }
+                else if (p->m_type == GL_FRAGMENT_SHADER)
+                {
+                    if (words[0] == "uniform")
+                    {
+                        sets.Add(words[2]);
+                    }
+                    else if (words[0] == "varying")
+                    {
+                        sets.Add(words[2]);
+                    }
+                    else if (s.Contains(" main("))
+                    {
+                        sentences[i] = "DLL_EXPORT " + s.Replace(" main(", " fs_main(");
+                    }
+                }
+            }
 
             if (p->m_type == GL_VERTEX_SHADER)
             {
+                gets.Add("gl_Position");
+
                 temp_file = "temp.vs.cpp";
-                src = File::ReadAllText("Assets/shader/vs_include.txt") + p->m_source;
+                String include = File::ReadAllText("Assets/shader/vs_include.txt");
+                src = include;
+
+                for (int i = 0; i < sentences.Size(); ++i)
+                {
+                    src += String::Format("%s;\n", sentences[i].CString());
+                }
+
+                for (int i = 0; i < sets.Size(); ++i)
+                {
+                    src += String::Format("VAR_SETTER(%s)\n", sets[i].CString());
+                }
+
+                for (int i = 0; i < gets.Size(); ++i)
+                {
+                    src += String::Format("VAR_GETTER(%s)\n", gets[i].CString());
+                }
             }
             else if (p->m_type == GL_FRAGMENT_SHADER)
             {
+                gets.Add("gl_FragColor");
+
                 temp_file = "temp.fs.cpp";
-                src = File::ReadAllText("Assets/shader/fs_include.txt") + p->m_source;
+                String include = File::ReadAllText("Assets/shader/fs_include.txt");
+                src = include;
+
+                for (int i = 0; i < sentences.Size(); ++i)
+                {
+                    src += sentences[i] + ";";
+                }
             }
 
             File::WriteAllText(temp_file, src);
@@ -159,8 +230,8 @@ namespace sgl
 
     void GLShader::Compile()
     {
-        //const std::string vs_path = "C:\\Program Files (x86)\\Microsoft Visual Studio\\2017\\Community";
-        const String vs_path = "D:\\Program\\VS2017";
+        const String vs_path = "C:\\Program Files (x86)\\Microsoft Visual Studio\\2017\\Community";
+        //const String vs_path = "D:\\Program\\VS2017";
         const bool isX64 = sizeof(void*) == 8;
         const String host = "Hostx64"; // "Hostx86"
         String cl_dir;
