@@ -7,6 +7,16 @@
 #define uniform static
 #define attribute static
 #define varying static
+#define VAR_SETTER(var) \
+    DLL_EXPORT void set_##var(void* p, int size) \
+    { \
+        memcpy(&var, p, size); \
+    }
+#define VAR_GETTER(var) \
+    DLL_EXPORT void* get_##var() \
+    { \
+        return &var; \
+    }
 
 struct vec2
 {

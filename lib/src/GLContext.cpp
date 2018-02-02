@@ -752,12 +752,12 @@ namespace sgl
 
             VarSetter set_v_uv = (VarSetter) GetProcAddress(dll, "set_v_uv");
             VarSetter set_v_color = (VarSetter) GetProcAddress(dll, "set_v_color");
-            Main ps_main = (Main) GetProcAddress(dll, "ps_main");
+            Main fs_main = (Main) GetProcAddress(dll, "fs_main");
             VarGetter get_gl_FragColor = (VarGetter) GetProcAddress(dll, "get_gl_FragColor");
 
             set_v_uv((void*) &uv, sizeof(Vector2));
             set_v_color((void*) &color, sizeof(Color));
-            ps_main();
+            fs_main();
             return *(Color*) get_gl_FragColor();
         }
 

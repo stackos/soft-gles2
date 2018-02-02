@@ -7,6 +7,16 @@
 #define uniform static
 #define attribute static
 #define varying static
+#define VAR_SETTER(var) \
+    DLL_EXPORT void set_##var(void* p, int size) \
+    { \
+        memcpy(&var, p, size); \
+    }
+#define VAR_GETTER(var) \
+    DLL_EXPORT void* get_##var() \
+    { \
+        return &var; \
+    }
 
 struct vec2
 {
@@ -98,7 +108,7 @@ varying vec2 v_uv;
 varying vec4 v_color;
 
 DLL_EXPORT
-void ps_main()
+void fs_main()
 {
     //gl_FragColor = v_color;
     gl_FragColor = texture2D(u_tex, v_uv);
@@ -107,20 +117,7 @@ void ps_main()
 // shader end
 //
 
-#define VAR_SETTER(var) \
-    DLL_EXPORT void set_##var(void* p, int size) \
-    { \
-        memcpy(&var, p, size); \
-    }
-#define VAR_GETTER(var) \
-    DLL_EXPORT void* get_##var() \
-    { \
-        return &var; \
-    }
-#define UNIFORM_SETTER VAR_SETTER
-#define VARYING_SETTER VAR_SETTER
-
-UNIFORM_SETTER(u_tex)
-VARYING_SETTER(v_uv)
-VARYING_SETTER(v_color)
+VAR_SETTER(u_tex)
+VAR_SETTER(v_uv)
+VAR_SETTER(v_color)
 VAR_GETTER(gl_FragColor)
