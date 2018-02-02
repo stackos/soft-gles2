@@ -551,6 +551,15 @@ namespace sgl
             }
         }
 
+        void CompileShader(GLuint shader)
+        {
+            Ref<GLShader> obj = this->ObjectGet<GLShader>(shader);
+            if (obj)
+            {
+                obj->Compile();
+            }
+        }
+
         /*
         struct Vector2i
         {
@@ -1149,6 +1158,7 @@ IMPLEMENT_VOID_GL_FUNC_1(DeleteShader, GLuint)
 IMPLEMENT_GL_FUNC_1(GLboolean, IsShader, GLuint)
 IMPLEMENT_VOID_GL_FUNC_4(ShaderSource, GLuint, GLsizei, const GLchar* const*, const GLint*)
 IMPLEMENT_VOID_GL_FUNC_4(GetShaderSource, GLuint, GLsizei, GLsizei*, GLchar*)
+IMPLEMENT_VOID_GL_FUNC_1(CompileShader, GLuint)
 NOT_IMPLEMENT_VOID_GL_FUNC(ShaderBinary(GLsizei, const GLuint*, GLenum binaryformat, const void*, GLsizei))
 NOT_IMPLEMENT_VOID_GL_FUNC(ReleaseShaderCompiler())
 NOT_IMPLEMENT_VOID_GL_FUNC(GetShaderPrecisionFormat(GLenum, GLenum, GLint*, GLint*))

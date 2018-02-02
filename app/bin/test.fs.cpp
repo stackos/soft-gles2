@@ -72,24 +72,36 @@ struct vec4
     }
 };
 
-static vec4 gl_Position;
+class sampler2D
+{
+public:
+    typedef vec4(*Sample)(void*, void*);
+    void* texture;
+    Sample sample_func;
+};
+
+static vec4 texture2D(const sampler2D& sampler, const vec2& uv)
+{
+    return sampler.sample_func(sampler.texture, (void*) &uv);
+}
+
+static vec4 gl_FragColor;
 
 //
 // shader begin
 //
-attribute vec4 a_position;
-attribute vec2 a_uv;
-attribute vec4 a_color;
+precision highp float;
+
+uniform sampler2D u_tex;
 
 varying vec2 v_uv;
 varying vec4 v_color;
 
 DLL_EXPORT
-void vs_main()
+void ps_main()
 {
-    gl_Position = a_position;
-    v_uv = a_uv;
-    v_color = a_color;
+    //gl_FragColor = v_color;
+    gl_FragColor = texture2D(u_tex, v_uv);
 }
 //
 // shader end
@@ -106,12 +118,9 @@ void vs_main()
         return &var; \
     }
 #define UNIFORM_SETTER VAR_SETTER
-#define ATTRIBUTE_SETTER VAR_SETTER
-#define VARYING_GETTER VAR_GETTER
+#define VARYING_SETTER VAR_SETTER
 
-ATTRIBUTE_SETTER(a_position)
-ATTRIBUTE_SETTER(a_uv)
-ATTRIBUTE_SETTER(a_color)
-VAR_GETTER(gl_Position)
-VARYING_GETTER(v_uv)
-VARYING_GETTER(v_color)
+UNIFORM_SETTER(u_tex)
+VARYING_SETTER(v_uv)
+VARYING_SETTER(v_color)
+VAR_GETTER(gl_FragColor)

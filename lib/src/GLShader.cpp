@@ -16,12 +16,103 @@
 */
 
 #include "GLShader.h"
+#include "Debug.h"
 #include "memory/Memory.h"
+#include "io/File.h"
+#include <Windows.h>
 
 using namespace Viry3D;
 
 namespace sgl
 {
+    class GLShaderPrivate
+    {
+    public:
+        GLShaderPrivate(GLShader* p):
+            p(p)
+        {
+        }
+
+        void ExecCmd(const String& path, const String& exe, const String& param, const String& output)
+        {
+            File::WriteAllText(output, "");
+
+            SECURITY_ATTRIBUTES sa = { sizeof(SECURITY_ATTRIBUTES), NULL, TRUE };
+            HANDLE hOutput = CreateFile(output.CString(),
+                GENERIC_WRITE,
+                FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
+                &sa, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+
+            STARTUPINFO si;
+            ZeroMemory(&si, sizeof(si));
+            si.cb = sizeof(si);
+            si.dwFlags = STARTF_USESHOWWINDOW | STARTF_USESTDHANDLES;
+            si.wShowWindow = SW_HIDE;
+            si.hStdOutput = hOutput;
+
+            PROCESS_INFORMATION pi;
+            ZeroMemory(&pi, sizeof(pi));
+
+            String cmd = "\"" + path + "\\" + exe + "\" " + param;
+
+            if (CreateProcess(
+                NULL,
+                (LPSTR) cmd.CString(),    // Command line
+                NULL,           // Process handle not inheritable
+                NULL,           // Thread handle not inheritable
+                TRUE,          // Set handle inheritance to FALSE
+                0,              // No creation flags
+                NULL,           // Use parent's environment block
+                NULL,           // Use parent's starting directory 
+                &si,            // Pointer to STARTUPINFO structure
+                &pi))
+            {
+                // Wait until child process exits.
+                WaitForSingleObject(pi.hProcess, INFINITE);
+
+                // Close process and thread handles. 
+                CloseHandle(pi.hProcess);
+                CloseHandle(pi.hThread);
+            }
+
+            CloseHandle(hOutput);
+        }
+
+        String GenTempSource()
+        {
+            String temp_file;
+            String src;
+
+            if (p->m_type == GL_VERTEX_SHADER)
+            {
+                temp_file = "temp.vs.cpp";
+                src = File::ReadAllText("Assets/shader/vs_include.txt") + p->m_source;
+            }
+            else if (p->m_type == GL_FRAGMENT_SHADER)
+            {
+                temp_file = "temp.fs.cpp";
+                src = File::ReadAllText("Assets/shader/fs_include.txt") + p->m_source;
+            }
+
+            File::WriteAllText(temp_file, src);
+
+            return temp_file;
+        }
+
+        GLShader* p;
+    };
+
+    GLShader::GLShader(GLuint id):
+        GLObject(id)
+    {
+        m_private = new GLShaderPrivate(this);
+    }
+
+    GLShader::~GLShader()
+    {
+        delete m_private;
+    }
+
     void GLShader::SetSource(GLsizei count, const GLchar* const* string, const GLint* length)
     {
         m_source = "";
@@ -64,5 +155,40 @@ namespace sgl
                 }
             }
         }
+    }
+
+    void GLShader::Compile()
+    {
+        //const std::string vs_path = "C:\\Program Files (x86)\\Microsoft Visual Studio\\2017\\Community";
+        const String vs_path = "D:\\Program\\VS2017";
+        const bool isX64 = sizeof(void*) == 8;
+        const String host = "Hostx64"; // "Hostx86"
+        String cl_dir;
+
+        if (isX64)
+        {
+            cl_dir = vs_path + "\\VC\\Tools\\MSVC\\14.12.25827\\bin\\" + host + "\\x64";
+        }
+        else
+        {
+            cl_dir = vs_path + "\\VC\\Tools\\MSVC\\14.12.25827\\bin\\" + host + "\\x86";
+        }
+
+        String temp_src_name = m_private->GenTempSource();
+        String temp_out_name = temp_src_name + ".out.txt";
+
+        m_private->ExecCmd(cl_dir, "cl.exe", "/c " + temp_src_name + " "
+            "/I \"" + vs_path + "\\VC\\Tools\\MSVC\\14.12.25827\\include\" "
+            "/I \"C:\\Program Files (x86)\\Windows Kits\\10\\Include\\10.0.16299.0\\ucrt\"",
+            temp_out_name);
+
+        String out_text = File::ReadAllText(temp_out_name);
+        if (out_text.Size() > 0)
+        {
+            Log(String::Format("Compile info:\n%s", out_text.CString()).CString());
+        }
+
+        DeleteFile(temp_src_name.CString());
+        DeleteFile(temp_out_name.CString());
     }
 }

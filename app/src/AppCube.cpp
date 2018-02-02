@@ -65,25 +65,27 @@ attribute vec2 a_uv;\
 attribute vec4 a_color;\
 varying vec2 v_uv;\
 varying vec4 v_color;\
-void vs_main()\
+void main()\
 {\
     gl_Position = a_position;\
     v_uv = a_uv;\
     v_color = a_color;\
 }";
         glShaderSource(vs, 1, (const GLchar* const*) &vs_src, nullptr);
-        
+        glCompileShader(vs);
+
         GLuint fs = glCreateShader(GL_FRAGMENT_SHADER);
         const char* ps_src = "\
 precision highp float;\
 uniform sampler2D u_tex;\
 varying vec2 v_uv;\
 varying vec4 v_color;\
-void ps_main()\
+void main()\
 {\
     gl_FragColor = texture2D(u_tex, v_uv) * v_color;\
 }";
-        glShaderSource(vs, 1, (const GLchar* const*) &vs_src, nullptr);
+        glShaderSource(fs, 1, (const GLchar* const*) &ps_src, nullptr);
+        glCompileShader(fs);
 
         // for test api
         {
@@ -106,7 +108,6 @@ void ps_main()\
             glGetShaderPrecisionFormat(0, 0, nullptr, nullptr);
         }
 
-        //glCompileShader
         //glGetShaderiv
         //glGetShaderInfoLog
         

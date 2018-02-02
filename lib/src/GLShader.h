@@ -22,15 +22,12 @@
 
 namespace sgl
 {
+    class GLShaderPrivate;
     class GLShader: public GLObject
     {
     public:
-        GLShader(GLuint id):
-            GLObject(id)
-        {
-        }
-
-        virtual ~GLShader() { }
+        GLShader(GLuint id);
+        virtual ~GLShader();
 
         void SetType(GLenum type)
         {
@@ -39,8 +36,11 @@ namespace sgl
 
         void SetSource(GLsizei count, const GLchar* const* string, const GLint* length);
         void GetSource(GLsizei bufSize, GLsizei* length, GLchar* source);
+        void Compile();
 
     private:
+        friend class GLShaderPrivate;
+        GLShaderPrivate* m_private;
         GLenum m_type;
         Viry3D::String m_source;
     };
