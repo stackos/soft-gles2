@@ -92,38 +92,40 @@ namespace sgl
                 const String& s = sentences[i];
                 Vector<String> words = s.Split(" ", true);
 
-                if (p->m_type == GL_VERTEX_SHADER)
+                if (words[0] == "uniform")
                 {
-                    if (words[0] == "uniform")
-                    {
-                        sets.Add(words[2]);
-                    }
-                    else if (words[0] == "attribute")
-                    {
-                        sets.Add(words[2]);
-                    }
-                    else if (words[0] == "varying")
+                    sets.Add(words[2]);
+                }
+                else if (words[0] == "varying")
+                {
+                    if (p->m_type == GL_VERTEX_SHADER)
                     {
                         gets.Add(words[2]);
                     }
-                    else if (s.Contains(" main("))
+                    else if (p->m_type == GL_FRAGMENT_SHADER)
                     {
-                        sentences[i] = "DLL_EXPORT " + s.Replace(" main(", " vs_main(");
+                        sets.Add(words[2]);
                     }
                 }
-                else if (p->m_type == GL_FRAGMENT_SHADER)
+                else
                 {
-                    if (words[0] == "uniform")
+                    if (p->m_type == GL_VERTEX_SHADER)
                     {
-                        sets.Add(words[2]);
+                        if (words[0] == "attribute")
+                        {
+                            sets.Add(words[2]);
+                        }
+                        else if (s.Contains(" main("))
+                        {
+                            sentences[i] = "DLL_EXPORT " + s.Replace(" main(", " vs_main(");
+                        }
                     }
-                    else if (words[0] == "varying")
+                    else if (p->m_type == GL_FRAGMENT_SHADER)
                     {
-                        sets.Add(words[2]);
-                    }
-                    else if (s.Contains(" main("))
-                    {
-                        sentences[i] = "DLL_EXPORT " + s.Replace(" main(", " fs_main(");
+                        if (s.Contains(" main("))
+                        {
+                            sentences[i] = "DLL_EXPORT " + s.Replace(" main(", " fs_main(");
+                        }
                     }
                 }
             }
@@ -133,36 +135,29 @@ namespace sgl
                 gets.Add("gl_Position");
 
                 temp_file = "temp.vs.cpp";
-                String include = File::ReadAllText("Assets/shader/vs_include.txt");
-                src = include;
-
-                for (int i = 0; i < sentences.Size(); ++i)
-                {
-                    src += String::Format("%s;\n", sentences[i].CString());
-                }
-
-                for (int i = 0; i < sets.Size(); ++i)
-                {
-                    src += String::Format("VAR_SETTER(%s)\n", sets[i].CString());
-                }
-
-                for (int i = 0; i < gets.Size(); ++i)
-                {
-                    src += String::Format("VAR_GETTER(%s)\n", gets[i].CString());
-                }
+                src = File::ReadAllText("Assets/shader/vs_include.txt");
             }
             else if (p->m_type == GL_FRAGMENT_SHADER)
             {
                 gets.Add("gl_FragColor");
 
                 temp_file = "temp.fs.cpp";
-                String include = File::ReadAllText("Assets/shader/fs_include.txt");
-                src = include;
+                src = File::ReadAllText("Assets/shader/fs_include.txt");
+            }
 
-                for (int i = 0; i < sentences.Size(); ++i)
-                {
-                    src += sentences[i] + ";";
-                }
+            for (int i = 0; i < sentences.Size(); ++i)
+            {
+                src += String::Format("%s;\n", sentences[i].CString());
+            }
+
+            for (int i = 0; i < sets.Size(); ++i)
+            {
+                src += String::Format("VAR_SETTER(%s)\n", sets[i].CString());
+            }
+
+            for (int i = 0; i < gets.Size(); ++i)
+            {
+                src += String::Format("VAR_GETTER(%s)\n", gets[i].CString());
             }
 
             File::WriteAllText(temp_file, src);
