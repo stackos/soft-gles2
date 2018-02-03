@@ -60,6 +60,7 @@ public:
 
         GLuint vs = glCreateShader(GL_VERTEX_SHADER);
         const char* vs_src = "\
+uniform mat4 u_mvp;\n\
 attribute vec4 a_position;\n\
 attribute vec2 a_uv;\n\
 attribute vec4 a_color;\n\
@@ -67,7 +68,7 @@ varying vec2 v_uv;\n\
 varying vec4 v_color;\n\
 void main()\n\
 {\n\
-    gl_Position = a_position;\n\
+    gl_Position = u_mvp * a_position;\n\
     v_uv = a_uv;\n\
     v_color = a_color;\n\
 }";

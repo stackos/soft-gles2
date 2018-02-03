@@ -29,7 +29,7 @@ namespace sgl
     {
     public:
         GLShaderPrivate(GLShader* p):
-            p(p)
+            m_p(p)
         {
         }
 
@@ -78,14 +78,17 @@ namespace sgl
             CloseHandle(hOutput);
         }
 
-        String GenTempSource()
+        // https://www.khronos.org/registry/OpenGL/specs/gl/GLSLangSpec.1.10.pdf
+        void ParseSource(String& temp_file)
         {
-            String temp_file;
-            String src = p->m_source;
+            String src = m_p->m_source;
             src = src.Replace("\t", " ").Replace("\r", " ").Replace("\n", " ");
             Vector<String> sentences = src.Split(";", true);
-            Vector<String> gets;
-            Vector<String> sets;
+
+            Vector<String> varyings;
+            Vector<String> builtins;
+            m_uniforms.Clear();
+            m_attributes.Clear();
 
             for (int i = 0; i < sentences.Size(); ++i)
             {
@@ -94,33 +97,26 @@ namespace sgl
 
                 if (words[0] == "uniform")
                 {
-                    sets.Add(words[2]);
+                    m_uniforms.Add(words[2]);
                 }
                 else if (words[0] == "varying")
                 {
-                    if (p->m_type == GL_VERTEX_SHADER)
-                    {
-                        gets.Add(words[2]);
-                    }
-                    else if (p->m_type == GL_FRAGMENT_SHADER)
-                    {
-                        sets.Add(words[2]);
-                    }
+                    varyings.Add(words[2]);
                 }
                 else
                 {
-                    if (p->m_type == GL_VERTEX_SHADER)
+                    if (m_p->m_type == GL_VERTEX_SHADER)
                     {
                         if (words[0] == "attribute")
                         {
-                            sets.Add(words[2]);
+                            m_attributes.Add(words[2]);
                         }
                         else if (s.Contains(" main("))
                         {
                             sentences[i] = "DLL_EXPORT " + s.Replace(" main(", " vs_main(");
                         }
                     }
-                    else if (p->m_type == GL_FRAGMENT_SHADER)
+                    else if (m_p->m_type == GL_FRAGMENT_SHADER)
                     {
                         if (s.Contains(" main("))
                         {
@@ -130,42 +126,63 @@ namespace sgl
                 }
             }
 
-            if (p->m_type == GL_VERTEX_SHADER)
+            if (m_p->m_type == GL_VERTEX_SHADER)
             {
-                gets.Add("gl_Position");
+                builtins.Add("gl_Position");
 
                 temp_file = "temp.vs.cpp";
-                src = File::ReadAllText("Assets/shader/vs_include.txt");
+                src = File::ReadAllText("Assets/shader/vs_include.txt") + "\n";
             }
-            else if (p->m_type == GL_FRAGMENT_SHADER)
+            else if (m_p->m_type == GL_FRAGMENT_SHADER)
             {
-                gets.Add("gl_FragColor");
+                builtins.Add("gl_FragColor");
 
                 temp_file = "temp.fs.cpp";
-                src = File::ReadAllText("Assets/shader/fs_include.txt");
+                src = File::ReadAllText("Assets/shader/fs_include.txt") + "\n";
             }
 
             for (int i = 0; i < sentences.Size(); ++i)
             {
                 src += String::Format("%s;\n", sentences[i].CString());
             }
+            src += "\n";
 
-            for (int i = 0; i < sets.Size(); ++i)
+            for (int i = 0; i < m_uniforms.Size(); ++i)
             {
-                src += String::Format("VAR_SETTER(%s)\n", sets[i].CString());
+                src += String::Format("VAR_SETTER(%s)\n", m_uniforms[i].CString());
             }
 
-            for (int i = 0; i < gets.Size(); ++i)
+            if (m_p->m_type == GL_VERTEX_SHADER)
             {
-                src += String::Format("VAR_GETTER(%s)\n", gets[i].CString());
+                for (int i = 0; i < m_attributes.Size(); ++i)
+                {
+                    src += String::Format("VAR_SETTER(%s)\n", m_attributes[i].CString());
+                }
+
+                for (int i = 0; i < varyings.Size(); ++i)
+                {
+                    src += String::Format("VAR_GETTER(%s)\n", varyings[i].CString());
+                }
+            }
+            else if (m_p->m_type == GL_FRAGMENT_SHADER)
+            {
+                for (int i = 0; i < varyings.Size(); ++i)
+                {
+                    src += String::Format("VAR_SETTER(%s)\n", varyings[i].CString());
+                }
+            }
+
+            for (int i = 0; i < builtins.Size(); ++i)
+            {
+                src += String::Format("VAR_GETTER(%s)\n", builtins[i].CString());
             }
 
             File::WriteAllText(temp_file, src);
-
-            return temp_file;
         }
 
-        GLShader* p;
+        GLShader* m_p;
+        Vector<String> m_uniforms;
+        Vector<String> m_attributes;
     };
 
     GLShader::GLShader(GLuint id):
@@ -225,8 +242,8 @@ namespace sgl
 
     void GLShader::Compile()
     {
-        const String vs_path = "C:\\Program Files (x86)\\Microsoft Visual Studio\\2017\\Community";
-        //const String vs_path = "D:\\Program\\VS2017";
+        //const String vs_path = "C:\\Program Files (x86)\\Microsoft Visual Studio\\2017\\Community";
+        const String vs_path = "D:\\Program\\VS2017";
         const bool isX64 = sizeof(void*) == 8;
         const String host = "Hostx64"; // "Hostx86"
         String cl_dir;
@@ -240,7 +257,8 @@ namespace sgl
             cl_dir = vs_path + "\\VC\\Tools\\MSVC\\14.12.25827\\bin\\" + host + "\\x86";
         }
 
-        String temp_src_name = m_private->GenTempSource();
+        String temp_src_name;
+        m_private->ParseSource(temp_src_name);
         String temp_out_name = temp_src_name + ".out.txt";
 
         m_private->ExecCmd(cl_dir, "cl.exe", "/c " + temp_src_name + " "
