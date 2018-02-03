@@ -24,6 +24,7 @@
 #include "GLRenderbuffer.h"
 #include "GLTexture.h"
 #include "GLShader.h"
+#include "GLProgram.h"
 
 #include "math/Mathf.h"
 #include "container/Map.h"
@@ -118,7 +119,7 @@ namespace sgl
         typedef std::function<void(const Ref<GLObject>&)> OnRemoveObject;
 
         template<class T>
-        void DeleteObjects(GLsizei n, const GLuint* objs, OnRemoveObject on_remove)
+        void DeleteObjects(GLsizei n, const GLuint* objs, OnRemoveObject on_remove = nullptr)
         {
             for (int i = 0; i < n; ++i)
             {
@@ -525,7 +526,7 @@ namespace sgl
 
         void DeleteShader(GLuint shader)
         {
-            this->DeleteObjects<GLShader>(1, &shader, nullptr);
+            this->DeleteObjects<GLShader>(1, &shader);
         }
 
         GLboolean IsShader(GLuint shader)
@@ -558,6 +559,23 @@ namespace sgl
             {
                 obj->Compile();
             }
+        }
+
+        GLuint CreateProgram()
+        {
+            GLuint program = 0;
+            this->GenObjects<GLProgram>(1, &program);
+            return program;
+        }
+
+        void DeleteProgram(GLuint program)
+        {
+            this->DeleteObjects<GLProgram>(1, &program);
+        }
+
+        GLboolean IsProgram(GLuint program)
+        {
+            return this->ObjectIs<GLProgram>(program);
         }
 
         /*
@@ -1120,6 +1138,10 @@ __declspec(dllexport) void set_gl_context_default_buffers(void* color_buffer, vo
     void GL_APIENTRY gl##func(t1 p1, t2 p2, t3 p3, t4 p4, t5 p5, t6 p6, t7 p7) { \
         gl->func(p1, p2, p3, p4, p5, p6, p7); \
     }
+#define IMPLEMENT_GL_FUNC_0(ret, func) \
+    ret GL_APIENTRY gl##func() { \
+        return gl->func(); \
+    }
 #define IMPLEMENT_GL_FUNC_1(ret, func, t1) \
     ret GL_APIENTRY gl##func(t1 p1) { \
         return gl->func(p1); \
@@ -1162,3 +1184,10 @@ IMPLEMENT_VOID_GL_FUNC_1(CompileShader, GLuint)
 NOT_IMPLEMENT_VOID_GL_FUNC(ShaderBinary(GLsizei, const GLuint*, GLenum binaryformat, const void*, GLsizei))
 NOT_IMPLEMENT_VOID_GL_FUNC(ReleaseShaderCompiler())
 NOT_IMPLEMENT_VOID_GL_FUNC(GetShaderPrecisionFormat(GLenum, GLenum, GLint*, GLint*))
+NOT_IMPLEMENT_VOID_GL_FUNC(GetShaderiv(GLuint, GLenum, GLint*))
+NOT_IMPLEMENT_VOID_GL_FUNC(GetShaderInfoLog(GLuint, GLsizei, GLsizei*, GLchar*))
+
+//Program
+IMPLEMENT_GL_FUNC_0(GLuint, CreateProgram)
+IMPLEMENT_VOID_GL_FUNC_1(DeleteProgram, GLuint)
+IMPLEMENT_GL_FUNC_1(GLboolean, IsProgram, GLuint)

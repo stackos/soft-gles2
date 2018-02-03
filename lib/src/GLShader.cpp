@@ -130,14 +130,14 @@ namespace sgl
             {
                 builtins.Add("gl_Position");
 
-                temp_file = "temp.vs.cpp";
+                temp_file = "temp.vs";
                 src = File::ReadAllText("Assets/shader/vs_include.txt") + "\n";
             }
             else if (m_p->m_type == GL_FRAGMENT_SHADER)
             {
                 builtins.Add("gl_FragColor");
 
-                temp_file = "temp.fs.cpp";
+                temp_file = "temp.fs";
                 src = File::ReadAllText("Assets/shader/fs_include.txt") + "\n";
             }
 
@@ -177,12 +177,13 @@ namespace sgl
                 src += String::Format("VAR_GETTER(%s)\n", builtins[i].CString());
             }
 
-            File::WriteAllText(temp_file, src);
+            File::WriteAllText(temp_file + ".cpp", src);
         }
 
         GLShader* m_p;
         Vector<String> m_uniforms;
         Vector<String> m_attributes;
+        ByteBuffer m_obj_bin;
     };
 
     GLShader::GLShader(GLuint id):
@@ -242,8 +243,8 @@ namespace sgl
 
     void GLShader::Compile()
     {
-        //const String vs_path = "C:\\Program Files (x86)\\Microsoft Visual Studio\\2017\\Community";
-        const String vs_path = "D:\\Program\\VS2017";
+        const String vs_path = "C:\\Program Files (x86)\\Microsoft Visual Studio\\2017\\Community";
+        //const String vs_path = "D:\\Program\\VS2017";
         const bool isX64 = sizeof(void*) == 8;
         const String host = "Hostx64"; // "Hostx86"
         String cl_dir;
@@ -261,18 +262,19 @@ namespace sgl
         m_private->ParseSource(temp_src_name);
         String temp_out_name = temp_src_name + ".out.txt";
 
-        m_private->ExecCmd(cl_dir, "cl.exe", "/c " + temp_src_name + " "
+        m_private->ExecCmd(cl_dir, "cl.exe", "/c " + temp_src_name + ".cpp "
             "/I \"" + vs_path + "\\VC\\Tools\\MSVC\\14.12.25827\\include\" "
             "/I \"C:\\Program Files (x86)\\Windows Kits\\10\\Include\\10.0.16299.0\\ucrt\"",
             temp_out_name);
 
         String out_text = File::ReadAllText(temp_out_name);
-        if (out_text.Size() > 0)
-        {
-            Log(String::Format("Compile info:\n%s", out_text.CString()).CString());
-        }
 
-        DeleteFile(temp_src_name.CString());
+        m_private->m_obj_bin = File::ReadAllBytes(temp_src_name + ".obj");
+
+        DeleteFile((temp_src_name + ".cpp").CString());
+        DeleteFile((temp_src_name + ".obj").CString());
         DeleteFile(temp_out_name.CString());
+
+        Log("Compile info:\n%sgen obj size:%d", out_text.CString(), m_private->m_obj_bin.Size());
     }
 }

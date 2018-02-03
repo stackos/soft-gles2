@@ -88,6 +88,8 @@ void main()\n\
         glShaderSource(fs, 1, (const GLchar* const*) &ps_src, nullptr);
         glCompileShader(fs);
 
+        m_program = glCreateProgram();
+
         // for test api
         {
             glIsRenderbuffer(m_rbo_color);
@@ -107,16 +109,16 @@ void main()\n\
             glShaderBinary(0, nullptr, 0, nullptr, 0);
             glReleaseShaderCompiler();
             glGetShaderPrecisionFormat(0, 0, nullptr, nullptr);
-        }
+            glGetShaderiv(0, 0, nullptr);
+            glGetShaderInfoLog(0, 0, nullptr, nullptr);
 
-        //glGetShaderiv
-        //glGetShaderInfoLog
+            glIsProgram(m_program);
+        }
         
-        //glCreateProgram
-        //glDeleteProgram
         //glAttachShader
         //glDetachShader
         //glGetAttachedShaders
+        //glLinkProgram
 
         //glFramebufferTexture2D
 
@@ -151,6 +153,7 @@ void main()\n\
         glDeleteRenderbuffers(1, &m_rbo_color);
         glDeleteRenderbuffers(1, &m_rbo_depth);
         glDeleteRenderbuffers(1, &m_rbo_stencil);
+        glDeleteProgram(m_program);
     }
 
     void Draw()
@@ -162,6 +165,7 @@ void main()\n\
     GLuint m_rbo_color;
     GLuint m_rbo_depth;
     GLuint m_rbo_stencil;
+    GLuint m_program;
 };
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShowCmd)
