@@ -19,6 +19,7 @@
 
 #include "GLObject.h"
 #include "string/String.h"
+#include "memory/ByteBuffer.h"
 
 namespace sgl
 {
@@ -29,6 +30,8 @@ namespace sgl
         GLShader(GLuint id);
         virtual ~GLShader();
 
+        GLenum GetType() const { return m_type; }
+
         void SetType(GLenum type)
         {
             m_type = type;
@@ -37,6 +40,7 @@ namespace sgl
         void SetSource(GLsizei count, const GLchar* const* string, const GLint* length);
         void GetSource(GLsizei bufSize, GLsizei* length, GLchar* source);
         void Compile();
+        Viry3D::ByteBuffer GetBinary();
 
     private:
         friend class GLShaderPrivate;

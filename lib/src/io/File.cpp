@@ -21,6 +21,10 @@
 #include "zlib/unzip.h"
 #include <fstream>
 
+#if VR_WINDOWS
+#include <Windows.h>
+#endif
+
 namespace Viry3D
 {
 	bool File::Exist(const String& path)
@@ -78,6 +82,11 @@ namespace Viry3D
 		ByteBuffer buffer((byte*) text.CString(), text.Size());
 		WriteAllBytes(path, buffer);
 	}
+
+    void File::Delete(const String& path)
+    {
+        DeleteFile(path.CString());
+    }
 
 	static void unzip_file(unzFile file, const String& path)
 	{

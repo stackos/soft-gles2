@@ -25,7 +25,7 @@
 #include "GLTexture.h"
 #include "GLShader.h"
 #include "GLProgram.h"
-
+#include "Debug.h"
 #include "math/Mathf.h"
 #include "container/Map.h"
 
@@ -578,6 +578,46 @@ namespace sgl
             return this->ObjectIs<GLProgram>(program);
         }
 
+        void AttachShader(GLuint program, GLuint shader)
+        {
+            Ref<GLProgram> p = this->ObjectGet<GLProgram>(program);
+            if (p)
+            {
+                Ref<GLShader> s = this->ObjectGet<GLShader>(shader);
+                if (s)
+                {
+                    p->AttachShader(s);
+                }
+            }
+        }
+
+        void DetachShader(GLuint program, GLuint shader)
+        {
+            Ref<GLProgram> p = this->ObjectGet<GLProgram>(program);
+            if (p)
+            {
+                p->DetachShader(shader);
+            }
+        }
+
+        void GetAttachedShaders(GLuint program, GLsizei maxCount, GLsizei* count, GLuint* shaders)
+        {
+            Ref<GLProgram> p = this->ObjectGet<GLProgram>(program);
+            if (p)
+            {
+                p->GetAttachedShaders(maxCount, count, shaders);
+            }
+        }
+
+        void LinkProgram(GLuint program)
+        {
+            Ref<GLProgram> p = this->ObjectGet<GLProgram>(program);
+            if (p)
+            {
+                p->Link();
+            }
+        }
+        
         /*
         struct Vector2i
         {
@@ -1034,9 +1074,9 @@ namespace sgl
             m_viewport_y(-1),
             m_viewport_width(-1),
             m_viewport_height(-1),
-            m_clear_color_red(1.0f),
-            m_clear_color_green(1.0f),
-            m_clear_color_blue(1.0f),
+            m_clear_color_red(0.0f),
+            m_clear_color_green(0.0f),
+            m_clear_color_blue(0.0f),
             m_clear_color_alpha(1.0f),
             m_clear_depth(1.0f),
             m_clear_stencil(0)
@@ -1045,7 +1085,7 @@ namespace sgl
 
         ~GLContext()
         {
-            m_objects.Clear();
+            assert(m_objects.Size() == 0);
 
             /*if (dll)
             {
@@ -1191,3 +1231,7 @@ NOT_IMPLEMENT_VOID_GL_FUNC(GetShaderInfoLog(GLuint, GLsizei, GLsizei*, GLchar*))
 IMPLEMENT_GL_FUNC_0(GLuint, CreateProgram)
 IMPLEMENT_VOID_GL_FUNC_1(DeleteProgram, GLuint)
 IMPLEMENT_GL_FUNC_1(GLboolean, IsProgram, GLuint)
+IMPLEMENT_VOID_GL_FUNC_2(AttachShader, GLuint, GLuint)
+IMPLEMENT_VOID_GL_FUNC_2(DetachShader, GLuint, GLuint)
+IMPLEMENT_VOID_GL_FUNC_4(GetAttachedShaders, GLuint, GLsizei, GLsizei*, GLuint*)
+IMPLEMENT_VOID_GL_FUNC_1(LinkProgram, GLuint)

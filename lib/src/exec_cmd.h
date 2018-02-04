@@ -1,5 +1,5 @@
 /*
-* Viry3D
+* soft-gles2
 * Copyright 2014-2018 by Stack - stackos@qq.com
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,27 +15,9 @@
 * limitations under the License.
 */
 
-#pragma once
-
 #include "string/String.h"
-#include <assert.h>
 
-namespace Viry3D
+namespace sgl
 {
-	class Debug
-	{
-	public:
-		static void LogString(const String& str, bool end_line);
-	};
-
-#define Log(...) Viry3D::Debug::LogString(Viry3D::String::Format(__VA_ARGS__) + Viry3D::String::Format("\n<=[%s:%d]", __FILE__, __LINE__), true)
-
-#define LogGLError()						\
-    {										\
-        int err = glGetError();				\
-		if(err != 0)						\
-		{									\
-            Log("glGetError: %d", err);		\
-        }									\
-    }
+    void exec_cmd(const Viry3D::String& path, const Viry3D::String& exe, const Viry3D::String& param, const Viry3D::String& output);
 }

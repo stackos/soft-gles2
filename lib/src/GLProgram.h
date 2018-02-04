@@ -18,19 +18,26 @@
 #pragma once
 
 #include "GLObject.h"
+#include "memory/Ref.h"
 
 namespace sgl
 {
+    class GLShader;
+
+    class GLProgramPrivate;
     class GLProgram: public GLObject
     {
     public:
-        GLProgram(GLuint id):
-            GLObject(id)
-        {
-        }
+        GLProgram(GLuint id);
+        virtual ~GLProgram();
 
-        virtual ~GLProgram() { }
+        void AttachShader(const Ref<GLShader>& shader);
+        void DetachShader(GLuint shader);
+        void GetAttachedShaders(GLsizei maxCount, GLsizei* count, GLuint* shaders);
+        void Link();
 
     private:
+        friend class GLProgramPrivate;
+        GLProgramPrivate* m_private;
     };
 }

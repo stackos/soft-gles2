@@ -63,6 +63,9 @@
     <ClCompile Include="..\..\bin\test.fs.cpp">
       <Filter>src</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\lib\src\Debug.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\src\display\DisplayWindows.h">
@@ -109,6 +112,9 @@
     </ClInclude>
     <ClInclude Include="..\..\..\lib\src\memory\Ref.h">
       <Filter>src\memory</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\lib\src\Debug.h">
+      <Filter>src</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

@@ -16,10 +16,10 @@
 */
 
 #include "GLShader.h"
+#include "exec_cmd.h"
 #include "Debug.h"
 #include "memory/Memory.h"
 #include "io/File.h"
-#include <Windows.h>
 
 using namespace Viry3D;
 
@@ -31,51 +31,6 @@ namespace sgl
         GLShaderPrivate(GLShader* p):
             m_p(p)
         {
-        }
-
-        void ExecCmd(const String& path, const String& exe, const String& param, const String& output)
-        {
-            File::WriteAllText(output, "");
-
-            SECURITY_ATTRIBUTES sa = { sizeof(SECURITY_ATTRIBUTES), NULL, TRUE };
-            HANDLE hOutput = CreateFile(output.CString(),
-                GENERIC_WRITE,
-                FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
-                &sa, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
-
-            STARTUPINFO si;
-            ZeroMemory(&si, sizeof(si));
-            si.cb = sizeof(si);
-            si.dwFlags = STARTF_USESHOWWINDOW | STARTF_USESTDHANDLES;
-            si.wShowWindow = SW_HIDE;
-            si.hStdOutput = hOutput;
-
-            PROCESS_INFORMATION pi;
-            ZeroMemory(&pi, sizeof(pi));
-
-            String cmd = "\"" + path + "\\" + exe + "\" " + param;
-
-            if (CreateProcess(
-                NULL,
-                (LPSTR) cmd.CString(),    // Command line
-                NULL,           // Process handle not inheritable
-                NULL,           // Thread handle not inheritable
-                TRUE,          // Set handle inheritance to FALSE
-                0,              // No creation flags
-                NULL,           // Use parent's environment block
-                NULL,           // Use parent's starting directory 
-                &si,            // Pointer to STARTUPINFO structure
-                &pi))
-            {
-                // Wait until child process exits.
-                WaitForSingleObject(pi.hProcess, INFINITE);
-
-                // Close process and thread handles. 
-                CloseHandle(pi.hProcess);
-                CloseHandle(pi.hThread);
-            }
-
-            CloseHandle(hOutput);
         }
 
         // https://www.khronos.org/registry/OpenGL/specs/gl/GLSLangSpec.1.10.pdf
@@ -262,7 +217,7 @@ namespace sgl
         m_private->ParseSource(temp_src_name);
         String temp_out_name = temp_src_name + ".out.txt";
 
-        m_private->ExecCmd(cl_dir, "cl.exe", "/c " + temp_src_name + ".cpp "
+        exec_cmd(cl_dir, "cl.exe", "/c " + temp_src_name + ".cpp "
             "/I \"" + vs_path + "\\VC\\Tools\\MSVC\\14.12.25827\\include\" "
             "/I \"C:\\Program Files (x86)\\Windows Kits\\10\\Include\\10.0.16299.0\\ucrt\"",
             temp_out_name);
@@ -271,10 +226,15 @@ namespace sgl
 
         m_private->m_obj_bin = File::ReadAllBytes(temp_src_name + ".obj");
 
-        DeleteFile((temp_src_name + ".cpp").CString());
-        DeleteFile((temp_src_name + ".obj").CString());
-        DeleteFile(temp_out_name.CString());
+        File::Delete(temp_src_name + ".cpp");
+        File::Delete(temp_src_name + ".obj");
+        File::Delete(temp_out_name);
 
         Log("Compile info:\n%sgen obj size:%d", out_text.CString(), m_private->m_obj_bin.Size());
+    }
+
+    ByteBuffer GLShader::GetBinary()
+    {
+        return m_private->m_obj_bin;
     }
 }

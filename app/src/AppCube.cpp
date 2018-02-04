@@ -18,14 +18,15 @@
 #include <Windows.h>
 #include "display/DisplayWindows.h"
 #include "GLES2/gl2.h"
+#include "Debug.h"
 
 class Renderer
 {
 public:
     Renderer()
     {
-        glViewport(100, 100, 200, 200);
-        glClearColor(1, 0, 0, 1);
+        glViewport(0, 0, 1280, 720);
+        glClearColor(0, 0, 0, 1);
         glClearDepthf(1);
         glClearStencil(0);
 
@@ -55,7 +56,7 @@ public:
         GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
         if (status == GL_FRAMEBUFFER_COMPLETE)
         {
-            // frame buffer status ok
+            Log("frame buffer status ok");
         }
 
         GLuint vs = glCreateShader(GL_VERTEX_SHADER);
@@ -90,6 +91,11 @@ void main()\n\
 
         m_program = glCreateProgram();
 
+        glAttachShader(m_program, vs);
+        glAttachShader(m_program, fs);
+
+        glLinkProgram(m_program);
+
         // for test api
         {
             glIsRenderbuffer(m_rbo_color);
@@ -113,12 +119,11 @@ void main()\n\
             glGetShaderInfoLog(0, 0, nullptr, nullptr);
 
             glIsProgram(m_program);
+
+            int count;
+            GLuint shaders[10];
+            glGetAttachedShaders(m_program, 10, &count, shaders);
         }
-        
-        //glAttachShader
-        //glDetachShader
-        //glGetAttachedShaders
-        //glLinkProgram
 
         //glFramebufferTexture2D
 
