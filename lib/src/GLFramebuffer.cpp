@@ -21,7 +21,7 @@
 
 namespace sgl
 {
-    void GLFramebuffer::GetAttachmentParameteriv(Attachment attachment, GLenum pname, GLint* params)
+    void GLFramebuffer::GetAttachmentParameteriv(Attachment attachment, GLenum pname, GLint* params) const
     {
         Ref<GLObject> obj;
 
@@ -61,7 +61,7 @@ namespace sgl
         }
     }
 
-    GLenum GLFramebuffer::CheckStatus()
+    GLenum GLFramebuffer::CheckStatus() const
     {
         bool no_attached = true;
         bool all_attached = true;

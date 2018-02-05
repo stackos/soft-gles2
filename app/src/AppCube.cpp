@@ -94,7 +94,18 @@ void main()\n\
         glAttachShader(m_program, vs);
         glAttachShader(m_program, fs);
 
+        glBindAttribLocation(m_program, 0, "a_position");
+        glBindAttribLocation(m_program, 1, "a_uv");
+        glBindAttribLocation(m_program, 2, "a_color");
+
         glLinkProgram(m_program);
+
+        int loc_a_position = glGetAttribLocation(m_program, "a_position");
+        int loc_a_uv = glGetAttribLocation(m_program, "a_uv");
+        int loc_a_color = glGetAttribLocation(m_program, "a_color");
+
+        int loc_u_mvp = glGetUniformLocation(m_program, "u_mvp");
+        int loc_u_tex = glGetUniformLocation(m_program, "u_tex");
 
         // for test api
         {

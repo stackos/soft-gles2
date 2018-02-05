@@ -20,6 +20,7 @@
 #include "Debug.h"
 #include "memory/Memory.h"
 #include "io/File.h"
+#include "math/Mathf.h"
 
 using namespace Viry3D;
 
@@ -28,6 +29,18 @@ namespace sgl
     class GLShaderPrivate
     {
     public:
+        struct Attribute
+        {
+            String name;
+            int location;
+
+            Attribute(const String& name):
+                name(name),
+                location(-1)
+            {
+            }
+        };
+
         GLShaderPrivate(GLShader* p):
             m_p(p)
         {
@@ -64,7 +77,7 @@ namespace sgl
                     {
                         if (words[0] == "attribute")
                         {
-                            m_attributes.Add(words[2]);
+                            m_attributes.Add(Attribute(words[2]));
                         }
                         else if (s.Contains(" main("))
                         {
@@ -111,7 +124,7 @@ namespace sgl
             {
                 for (int i = 0; i < m_attributes.Size(); ++i)
                 {
-                    src += String::Format("VAR_SETTER(%s)\n", m_attributes[i].CString());
+                    src += String::Format("VAR_SETTER(%s)\n", m_attributes[i].name.CString());
                 }
 
                 for (int i = 0; i < varyings.Size(); ++i)
@@ -137,7 +150,7 @@ namespace sgl
 
         GLShader* m_p;
         Vector<String> m_uniforms;
-        Vector<String> m_attributes;
+        Vector<Attribute> m_attributes;
         ByteBuffer m_obj_bin;
     };
 
@@ -169,7 +182,7 @@ namespace sgl
         }
     }
 
-    void GLShader::GetSource(GLsizei bufSize, GLsizei* length, GLchar* source)
+    void GLShader::GetSource(GLsizei bufSize, GLsizei* length, GLchar* source) const
     {
         if (bufSize > 0)
         {
@@ -198,8 +211,8 @@ namespace sgl
 
     void GLShader::Compile()
     {
-        const String vs_path = "C:\\Program Files (x86)\\Microsoft Visual Studio\\2017\\Community";
-        //const String vs_path = "D:\\Program\\VS2017";
+        //const String vs_path = "C:\\Program Files (x86)\\Microsoft Visual Studio\\2017\\Community";
+        const String vs_path = "D:\\Program\\VS2017";
         const bool isX64 = sizeof(void*) == 8;
         const String host = "Hostx64"; // "Hostx86"
         String cl_dir;
@@ -233,8 +246,57 @@ namespace sgl
         Log("Compile info:\n%sgen obj size:%d", out_text.CString(), m_private->m_obj_bin.Size());
     }
 
-    ByteBuffer GLShader::GetBinary()
+    ByteBuffer GLShader::GetBinary() const
     {
         return m_private->m_obj_bin;
+    }
+
+    void GLShader::BindAttribLocations(const Map<String, GLuint>& bind_attribs)
+    {
+        int max_index = -1;
+
+        for (const auto& i : bind_attribs)
+        {
+            for (auto& j : m_private->m_attributes)
+            {
+                if (i.first == j.name)
+                {
+                    j.location = i.second;
+
+                    max_index = Mathf::Max(max_index, j.location);
+                    break;
+                }
+            }
+        }
+
+        for (auto& i : m_private->m_attributes)
+        {
+            if (i.location < 0)
+            {
+                i.location = ++max_index;
+            }
+        }
+    }
+
+    const Vector<String>& GLShader::GetUniforms() const
+    {
+        return m_private->m_uniforms;
+    }
+
+    GLint GLShader::GetAttribLocation(const GLchar* name) const
+    {
+        for (auto& i : m_private->m_attributes)
+        {
+            if (i.name == name)
+            {
+                if (i.location >= 0)
+                {
+                    return i.location;
+                }
+                break;
+            }
+        }
+
+        return -1;
     }
 }

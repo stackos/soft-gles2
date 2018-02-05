@@ -33,8 +33,11 @@ namespace sgl
 
         void AttachShader(const Ref<GLShader>& shader);
         void DetachShader(GLuint shader);
-        void GetAttachedShaders(GLsizei maxCount, GLsizei* count, GLuint* shaders);
+        void GetAttachedShaders(GLsizei maxCount, GLsizei* count, GLuint* shaders) const;
+        void BindAttribLocation(GLuint index, const GLchar* name);
         void Link();
+        GLint GetAttribLocation(const GLchar* name) const;
+        GLint GetUniformLocation(const GLchar* name) const;
 
     private:
         friend class GLProgramPrivate;

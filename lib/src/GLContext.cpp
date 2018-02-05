@@ -593,29 +593,60 @@ namespace sgl
 
         void DetachShader(GLuint program, GLuint shader)
         {
-            Ref<GLProgram> p = this->ObjectGet<GLProgram>(program);
-            if (p)
+            Ref<GLProgram> obj = this->ObjectGet<GLProgram>(program);
+            if (obj)
             {
-                p->DetachShader(shader);
+                obj->DetachShader(shader);
             }
         }
 
         void GetAttachedShaders(GLuint program, GLsizei maxCount, GLsizei* count, GLuint* shaders)
         {
-            Ref<GLProgram> p = this->ObjectGet<GLProgram>(program);
-            if (p)
+            Ref<GLProgram> obj = this->ObjectGet<GLProgram>(program);
+            if (obj)
             {
-                p->GetAttachedShaders(maxCount, count, shaders);
+                obj->GetAttachedShaders(maxCount, count, shaders);
+            }
+        }
+
+        void BindAttribLocation(GLuint program, GLuint index, const GLchar* name)
+        {
+            Ref<GLProgram> obj = this->ObjectGet<GLProgram>(program);
+            if (obj)
+            {
+                obj->BindAttribLocation(index, name);
             }
         }
 
         void LinkProgram(GLuint program)
         {
-            Ref<GLProgram> p = this->ObjectGet<GLProgram>(program);
-            if (p)
+            Ref<GLProgram> obj = this->ObjectGet<GLProgram>(program);
+            if (obj)
             {
-                p->Link();
+                obj->Link();
             }
+        }
+
+        GLint GetAttribLocation(GLuint program, const GLchar* name)
+        {
+            Ref<GLProgram> obj = this->ObjectGet<GLProgram>(program);
+            if (obj)
+            {
+                return obj->GetAttribLocation(name);
+            }
+
+            return -1;
+        }
+
+        GLint GetUniformLocation(GLuint program, const GLchar* name)
+        {
+            Ref<GLProgram> obj = this->ObjectGet<GLProgram>(program);
+            if (obj)
+            {
+                return obj->GetUniformLocation(name);
+            }
+
+            return -1;
         }
         
         /*
@@ -1186,6 +1217,10 @@ __declspec(dllexport) void set_gl_context_default_buffers(void* color_buffer, vo
     ret GL_APIENTRY gl##func(t1 p1) { \
         return gl->func(p1); \
     }
+#define IMPLEMENT_GL_FUNC_2(ret, func, t1, t2) \
+    ret GL_APIENTRY gl##func(t1 p1, t2 p2) { \
+        return gl->func(p1, p2); \
+    }
 
 // Framebuffer
 IMPLEMENT_VOID_GL_FUNC_2(GenFramebuffers, GLsizei, GLuint*)
@@ -1234,4 +1269,7 @@ IMPLEMENT_GL_FUNC_1(GLboolean, IsProgram, GLuint)
 IMPLEMENT_VOID_GL_FUNC_2(AttachShader, GLuint, GLuint)
 IMPLEMENT_VOID_GL_FUNC_2(DetachShader, GLuint, GLuint)
 IMPLEMENT_VOID_GL_FUNC_4(GetAttachedShaders, GLuint, GLsizei, GLsizei*, GLuint*)
+IMPLEMENT_VOID_GL_FUNC_3(BindAttribLocation, GLuint, GLuint, const GLchar*)
 IMPLEMENT_VOID_GL_FUNC_1(LinkProgram, GLuint)
+IMPLEMENT_GL_FUNC_2(GLint, GetAttribLocation, GLuint, const GLchar*)
+IMPLEMENT_GL_FUNC_2(GLint, GetUniformLocation, GLuint, const GLchar*)

@@ -20,6 +20,7 @@
 #include "GLObject.h"
 #include "string/String.h"
 #include "memory/ByteBuffer.h"
+#include "container/Map.h"
 
 namespace sgl
 {
@@ -38,12 +39,19 @@ namespace sgl
         }
 
         void SetSource(GLsizei count, const GLchar* const* string, const GLint* length);
-        void GetSource(GLsizei bufSize, GLsizei* length, GLchar* source);
+        void GetSource(GLsizei bufSize, GLsizei* length, GLchar* source) const;
         void Compile();
-        Viry3D::ByteBuffer GetBinary();
+        Viry3D::ByteBuffer GetBinary() const;
+
+    private:
+        void BindAttribLocations(const Viry3D::Map<Viry3D::String, GLuint>& bind_attribs);
+        const Viry3D::Vector<Viry3D::String>& GetUniforms() const;
+        GLint GetAttribLocation(const GLchar* name) const;
 
     private:
         friend class GLShaderPrivate;
+        friend class GLProgram;
+        friend class GLProgramPrivate;
         GLShaderPrivate* m_private;
         GLenum m_type;
         Viry3D::String m_source;

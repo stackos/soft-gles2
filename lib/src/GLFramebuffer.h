@@ -42,7 +42,7 @@ namespace sgl
 
         virtual ~GLFramebuffer() { }
 
-        Attachment GetAttachment(GLenum attachment)
+        Attachment GetAttachment(GLenum attachment) const
         {
             Attachment attach = Attachment::None;
 
@@ -69,8 +69,8 @@ namespace sgl
             m_attachments[(int) attachment] = obj;
         }
 
-        void GetAttachmentParameteriv(Attachment attachment, GLenum pname, GLint* params);
-        GLenum CheckStatus();
+        void GetAttachmentParameteriv(Attachment attachment, GLenum pname, GLint* params) const;
+        GLenum CheckStatus() const;
 
     private:
         WeakRef<GLObject> m_attachments[(int) Attachment::Count];

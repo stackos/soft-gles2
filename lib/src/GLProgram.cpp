@@ -20,6 +20,7 @@
 #include "exec_cmd.h"
 #include "io/File.h"
 #include "string/String.h"
+#include "container/Map.h"
 #include "Debug.h"
 
 using namespace Viry3D;
@@ -29,6 +30,18 @@ namespace sgl
     class GLProgramPrivate
     {
     public:
+        struct Uniform
+        {
+            String name;
+            int location;
+
+            Uniform(const String& name):
+                name(name),
+                location(-1)
+            {
+            }
+        };
+
         GLProgramPrivate(GLProgram* p):
             m_p(p)
         {
@@ -48,8 +61,41 @@ namespace sgl
             return String::Format("temp.p.%d", m_p->GetId());
         }
 
+        void BindUniformLocations()
+        {
+            Vector<String> uniforms_vs = m_shaders[0]->GetUniforms();
+            Vector<String> uniforms_fs = m_shaders[1]->GetUniforms();
+            Vector<String> uniforms;
+            uniforms.AddRange(&uniforms_vs[0], uniforms_vs.Size());
+            uniforms.AddRange(&uniforms_fs[0], uniforms_fs.Size());
+
+            m_uniforms.Clear();
+            for (int i = 0; i < uniforms.Size(); ++i)
+            {
+                bool exist = false;
+                for (int j = 0; j < m_uniforms.Size(); ++j)
+                {
+                    if (m_uniforms[j].name == uniforms[i])
+                    {
+                        exist = true;
+                        break;
+                    }
+                }
+
+                if (exist == false)
+                {
+                    GLProgramPrivate::Uniform u(uniforms[i]);
+                    u.location = m_uniforms.Size();
+
+                    m_uniforms.Add(u);
+                }
+            }
+        }
+
         GLProgram* m_p;
         Ref<GLShader> m_shaders[2];
+        Map<String, GLuint> m_bind_attribs;
+        Vector<Uniform> m_uniforms;
     };
 
     GLProgram::GLProgram(GLuint id):
@@ -98,7 +144,7 @@ namespace sgl
         }
     }
 
-    void GLProgram::GetAttachedShaders(GLsizei maxCount, GLsizei* count, GLuint* shaders)
+    void GLProgram::GetAttachedShaders(GLsizei maxCount, GLsizei* count, GLuint* shaders) const
     {
         int index = 0;
 
@@ -120,6 +166,18 @@ namespace sgl
         *count = index;
     }
 
+    void GLProgram::BindAttribLocation(GLuint index, const GLchar* name)
+    {
+        if (m_private->m_bind_attribs.Contains(name))
+        {
+            m_private->m_bind_attribs[name] = index;
+        }
+        else
+        {
+            m_private->m_bind_attribs.Add(name, index);
+        }
+    }
+
     void GLProgram::Link()
     {
         if (!m_private->m_shaders[0] || !m_private->m_shaders[1])
@@ -127,8 +185,8 @@ namespace sgl
             return;
         }
 
-        const String vs_path = "C:\\Program Files (x86)\\Microsoft Visual Studio\\2017\\Community";
-        //const String vs_path = "D:\\Program\\VS2017";
+        //const String vs_path = "C:\\Program Files (x86)\\Microsoft Visual Studio\\2017\\Community";
+        const String vs_path = "D:\\Program\\VS2017";
         const bool isX64 = sizeof(void*) == 8;
         const String host = "Hostx64"; // "Hostx86"
         String cl_dir;
@@ -170,6 +228,33 @@ namespace sgl
         File::Delete(temp_fs_obj_name);
         File::Delete(temp_out_name);
 
+        m_private->m_shaders[0]->BindAttribLocations(m_private->m_bind_attribs);
+        m_private->BindUniformLocations();
+
         Log("Link info:\n%sgen dll:%s.dll", out_text.CString(), dll_name.CString());
+    }
+
+    GLint GLProgram::GetAttribLocation(const GLchar* name) const
+    {
+        if (m_private->m_shaders[0])
+        {
+            return m_private->m_shaders[0]->GetAttribLocation(name);
+        }
+
+        return -1;
+    }
+
+    GLint GLProgram::GetUniformLocation(const GLchar* name) const
+    {
+        for (int i = 0; i < m_private->m_uniforms.Size(); ++i)
+        {
+            const auto& u = m_private->m_uniforms[i];
+            if (u.name == name)
+            {
+                return u.location;
+            }
+        }
+
+        return -1;
     }
 }
