@@ -136,6 +136,11 @@ void main()\n\
             glGetAttachedShaders(m_program, 10, &count, shaders);
         }
 
+        //glGenBuffers
+        //glDeleteBuffers
+        //glIsBuffer
+        //glBindBuffer
+
         //glFramebufferTexture2D
 
         //glGenTextures
