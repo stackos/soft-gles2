@@ -88,6 +88,17 @@ namespace sgl
     class GLContext
     {
     public:
+        struct VertexAttribArray
+        {
+            bool enable;
+            GLuint index;
+            GLint size;
+            GLenum type;
+            GLboolean normalized;
+            GLsizei stride;
+            const GLvoid* pointer;
+        };
+
         void SetDefaultBuffers(void* color_buffer, void* depth_buffer, void* stencil_buffer, int width, int height)
         {
             m_default_color_buffer = (unsigned char*) color_buffer;
@@ -144,12 +155,15 @@ namespace sgl
         template<class T>
         GLboolean ObjectIs(GLuint obj)
         {
-            Ref<GLObject>* find;
-            if (m_objects.TryGet(obj, &find))
+            if (obj > 0)
             {
-                if (RefCast<T>(*find))
+                Ref<GLObject>* find;
+                if (m_objects.TryGet(obj, &find))
                 {
-                    return GL_TRUE;
+                    if (RefCast<T>(*find))
+                    {
+                        return GL_TRUE;
+                    }
                 }
             }
 
@@ -159,10 +173,13 @@ namespace sgl
         template<class T>
         Ref<T> ObjectGet(GLuint obj)
         {
-            Ref<GLObject>* find;
-            if (m_objects.TryGet(obj, &find))
+            if (obj > 0)
             {
-                return RefCast<T>(*find);
+                Ref<GLObject>* find;
+                if (m_objects.TryGet(obj, &find))
+                {
+                    return RefCast<T>(*find);
+                }
             }
 
             return Ref<T>();
@@ -192,17 +209,14 @@ namespace sgl
         {
             if (target == GL_FRAMEBUFFER)
             {
-                if (framebuffer == 0)
+                Ref<GLFramebuffer> fb = this->ObjectGet<GLFramebuffer>(framebuffer);
+                if (fb)
                 {
-                    m_current_fb.reset();
+                    m_current_fb = fb;
                 }
                 else
                 {
-                    Ref<GLFramebuffer> fb = this->ObjectGet<GLFramebuffer>(framebuffer);
-                    if (fb)
-                    {
-                        m_current_fb = fb;
-                    }
+                    m_current_fb.reset();
                 }
             }
         }
@@ -216,11 +230,7 @@ namespace sgl
                     if (!m_current_fb.expired())
                     {
                         Ref<GLFramebuffer> fb = m_current_fb.lock();
-                        Ref<GLRenderbuffer> rb;
-                        if (renderbuffer > 0)
-                        {
-                            rb = this->ObjectGet<GLRenderbuffer>(renderbuffer);
-                        }
+                        Ref<GLRenderbuffer> rb = this->ObjectGet<GLRenderbuffer>(renderbuffer);
 
                         GLFramebuffer::Attachment attach = fb->GetAttachment(attachment);
                         if (attach != GLFramebuffer::Attachment::None)
@@ -350,17 +360,14 @@ namespace sgl
         {
             if (target == GL_RENDERBUFFER)
             {
-                if (renderbuffer == 0)
+                Ref<GLRenderbuffer> rb = this->ObjectGet<GLRenderbuffer>(renderbuffer);
+                if (rb)
                 {
-                    m_current_rb.reset();
+                    m_current_rb = rb;
                 }
                 else
                 {
-                    Ref<GLRenderbuffer> rb = this->ObjectGet<GLRenderbuffer>(renderbuffer);
-                    if (rb)
-                    {
-                        m_current_rb = rb;
-                    }
+                    m_current_rb.reset();
                 }
             }
         }
@@ -648,6 +655,19 @@ namespace sgl
 
             return -1;
         }
+
+        void UseProgram(GLuint program)
+        {
+            Ref<GLProgram> obj = this->ObjectGet<GLProgram>(program);
+            if (obj)
+            {
+                m_using_program = obj;
+            }
+            else
+            {
+                m_using_program.reset();
+            }
+        }
         
         void GenBuffers(GLsizei n, GLuint* buffers)
         {
@@ -662,6 +682,159 @@ namespace sgl
         GLboolean IsBuffer(GLuint buffer)
         {
             return this->ObjectIs<GLBuffer>(buffer);
+        }
+
+        void BindBuffer(GLenum target, GLuint buffer)
+        {
+            Ref<GLBuffer> obj = this->ObjectGet<GLBuffer>(buffer);
+            switch (target)
+            {
+                case GL_ARRAY_BUFFER:
+                    if (obj)
+                    {
+                        m_current_vb = obj;
+                    }
+                    else
+                    {
+                        m_current_vb.reset();
+                    }
+                    break;
+                case GL_ELEMENT_ARRAY_BUFFER:
+                    if (obj)
+                    {
+                        m_current_ib = obj;
+                    }
+                    else
+                    {
+                        m_current_ib.reset();
+                    }
+                    break;
+                default:
+                    break;
+            }
+        }
+
+        void BufferData(GLenum target, GLsizeiptr size, const void* data, GLenum usage)
+        {
+            switch (target)
+            {
+                case GL_ARRAY_BUFFER:
+                    if (!m_current_vb.expired())
+                    {
+                        m_current_vb.lock()->BufferData(size, data, usage);
+                    }
+                    break;
+                case GL_ELEMENT_ARRAY_BUFFER:
+                    if (!m_current_ib.expired())
+                    {
+                        m_current_ib.lock()->BufferData(size, data, usage);
+                    }
+                    break;
+                default:
+                    break;
+            }
+        }
+
+        void BufferSubData(GLenum target, GLintptr offset, GLsizeiptr size, const void* data)
+        {
+            switch (target)
+            {
+                case GL_ARRAY_BUFFER:
+                    if (!m_current_vb.expired())
+                    {
+                        m_current_vb.lock()->BufferSubData(offset, size, data);
+                    }
+                    break;
+                case GL_ELEMENT_ARRAY_BUFFER:
+                    if (!m_current_ib.expired())
+                    {
+                        m_current_ib.lock()->BufferSubData(offset, size, data);
+                    }
+                    break;
+                default:
+                    break;
+            }
+        }
+
+        void VertexAttribPointer(GLuint index, GLint size, GLenum type, GLboolean normalized, GLsizei stride, const void* pointer)
+        {
+            VertexAttribArray va;
+            va.enable = false;
+            va.index = index;
+            va.size = size;
+            va.type = type;
+            va.normalized = normalized;
+            va.stride = stride;
+            va.pointer = pointer;
+
+            int exist_index = -1;
+            for (int i = 0; i < m_vertex_attrib_arrays.Size(); ++i)
+            {
+                if (m_vertex_attrib_arrays[i].index == index)
+                {
+                    exist_index = i;
+                    break;
+                }
+            }
+
+            if (exist_index >= 0)
+            {
+                va.enable = m_vertex_attrib_arrays[exist_index].enable;
+                m_vertex_attrib_arrays[exist_index] = va;
+            }
+            else
+            {
+                m_vertex_attrib_arrays.Add(va);
+            }
+        }
+
+        void EnableVertexAttribArray(GLuint index)
+        {
+            int exist_index = -1;
+            for (int i = 0; i < m_vertex_attrib_arrays.Size(); ++i)
+            {
+                if (m_vertex_attrib_arrays[i].index == index)
+                {
+                    exist_index = i;
+                    break;
+                }
+            }
+
+            if (exist_index >= 0)
+            {
+                m_vertex_attrib_arrays[exist_index].enable = true;
+            }
+            else
+            {
+                VertexAttribArray va;
+                va.enable = true;
+                va.index = index;
+                va.size = 0;
+                va.type = 0;
+                va.normalized = 0;
+                va.stride = 0;
+                va.pointer = 0;
+
+                m_vertex_attrib_arrays.Add(va);
+            }
+        }
+
+        void DisableVertexAttribArray(GLuint index)
+        {
+            int exist_index = -1;
+            for (int i = 0; i < m_vertex_attrib_arrays.Size(); ++i)
+            {
+                if (m_vertex_attrib_arrays[i].index == index)
+                {
+                    exist_index = i;
+                    break;
+                }
+            }
+
+            if (exist_index >= 0)
+            {
+                m_vertex_attrib_arrays[exist_index].enable = false;
+            }
         }
 
         /*
@@ -1155,11 +1328,13 @@ namespace sgl
         unsigned char* m_default_stencil_buffer;
         int m_default_buffer_width;
         int m_default_buffer_height;
-
         Map<GLuint, Ref<GLObject>> m_objects;
         GLuint m_gen_id;
         WeakRef<GLFramebuffer> m_current_fb;
         WeakRef<GLRenderbuffer> m_current_rb;
+        WeakRef<GLBuffer> m_current_vb;
+        WeakRef<GLBuffer> m_current_ib;
+        WeakRef<GLProgram> m_using_program;
         int m_viewport_x;
         int m_viewport_y;
         int m_viewport_width;
@@ -1169,7 +1344,8 @@ namespace sgl
         float m_clear_color_blue;
         float m_clear_color_alpha;
         float m_clear_depth;
-        int m_clear_stencil; 
+        int m_clear_stencil;
+        Vector<VertexAttribArray> m_vertex_attrib_arrays;
     };
 }
 
@@ -1219,6 +1395,10 @@ __declspec(dllexport) void set_gl_context_default_buffers(void* color_buffer, vo
 #define IMPLEMENT_VOID_GL_FUNC_5(func, t1, t2, t3, t4, t5) \
     void GL_APIENTRY gl##func(t1 p1, t2 p2, t3 p3, t4 p4, t5 p5) { \
         gl->func(p1, p2, p3, p4, p5); \
+    }
+#define IMPLEMENT_VOID_GL_FUNC_6(func, t1, t2, t3, t4, t5, t6) \
+    void GL_APIENTRY gl##func(t1 p1, t2 p2, t3 p3, t4 p4, t5 p5, t6 p6) { \
+        gl->func(p1, p2, p3, p4, p5, p6); \
     }
 #define IMPLEMENT_VOID_GL_FUNC_7(func, t1, t2, t3, t4, t5, t6, t7) \
     void GL_APIENTRY gl##func(t1 p1, t2 p2, t3 p3, t4 p4, t5 p5, t6 p6, t7 p7) { \
@@ -1288,8 +1468,17 @@ IMPLEMENT_VOID_GL_FUNC_3(BindAttribLocation, GLuint, GLuint, const GLchar*)
 IMPLEMENT_VOID_GL_FUNC_1(LinkProgram, GLuint)
 IMPLEMENT_GL_FUNC_2(GLint, GetAttribLocation, GLuint, const GLchar*)
 IMPLEMENT_GL_FUNC_2(GLint, GetUniformLocation, GLuint, const GLchar*)
+IMPLEMENT_VOID_GL_FUNC_1(UseProgram, GLuint)
 
 // Buffer
 IMPLEMENT_VOID_GL_FUNC_2(GenBuffers, GLsizei, GLuint*)
 IMPLEMENT_VOID_GL_FUNC_2(DeleteBuffers, GLsizei, const GLuint*)
 IMPLEMENT_GL_FUNC_1(GLboolean, IsBuffer, GLuint)
+IMPLEMENT_VOID_GL_FUNC_2(BindBuffer, GLenum, GLuint)
+IMPLEMENT_VOID_GL_FUNC_4(BufferData, GLenum, GLsizeiptr, const void*, GLenum)
+IMPLEMENT_VOID_GL_FUNC_4(BufferSubData, GLenum, GLintptr, GLsizeiptr, const void*)
+
+// Draw
+IMPLEMENT_VOID_GL_FUNC_6(VertexAttribPointer, GLuint, GLint, GLenum, GLboolean, GLsizei, const void*)
+IMPLEMENT_VOID_GL_FUNC_1(EnableVertexAttribArray, GLuint)
+IMPLEMENT_VOID_GL_FUNC_1(DisableVertexAttribArray, GLuint)

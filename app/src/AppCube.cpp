@@ -19,6 +19,39 @@
 #include "display/DisplayWindows.h"
 #include "GLES2/gl2.h"
 #include "Debug.h"
+#include "math/Vector2.h"
+#include "math/Vector3.h"
+#include "math/Vector4.h"
+#include "math/Matrix4x4.h"
+
+using namespace Viry3D;
+
+struct Color
+{
+    float r;
+    float g;
+    float b;
+    float a;
+
+    Color(float r = 1, float g = 1, float b = 1, float a = 1): r(r), g(g), b(b), a(a) { }
+
+    Color operator +(const Color& right) const
+    {
+        return Color(r + right.r, g + right.g, b + right.b, a + right.a);
+    }
+
+    Color operator *(float right) const
+    {
+        return Color(r * right, g * right, b * right, a * right);
+    }
+};
+
+struct Vertex
+{
+    Vector3 pos;
+    Vector2 uv;
+    Color color;
+};
 
 class Renderer
 {
@@ -62,16 +95,12 @@ public:
         // shader
         GLuint vs = glCreateShader(GL_VERTEX_SHADER);
         const char* vs_src = "\
-uniform mat4 u_mvp;\n\
 attribute vec4 a_position;\n\
-attribute vec2 a_uv;\n\
 attribute vec4 a_color;\n\
-varying vec2 v_uv;\n\
 varying vec4 v_color;\n\
 void main()\n\
 {\n\
-    gl_Position = u_mvp * a_position;\n\
-    v_uv = a_uv;\n\
+    gl_Position = a_position;\n\
     v_color = a_color;\n\
 }";
         glShaderSource(vs, 1, (const GLchar* const*) &vs_src, nullptr);
@@ -80,12 +109,10 @@ void main()\n\
         GLuint fs = glCreateShader(GL_FRAGMENT_SHADER);
         const char* ps_src = "\
 precision highp float;\n\
-uniform sampler2D u_tex;\n\
-varying vec2 v_uv;\n\
 varying vec4 v_color;\n\
 void main()\n\
 {\n\
-    gl_FragColor = texture2D(u_tex, v_uv) * v_color;\n\
+    gl_FragColor = v_color;\n\
 }";
         glShaderSource(fs, 1, (const GLchar* const*) &ps_src, nullptr);
         glCompileShader(fs);
@@ -96,23 +123,27 @@ void main()\n\
         glAttachShader(m_program, fs);
 
         glBindAttribLocation(m_program, 0, "a_position");
-        glBindAttribLocation(m_program, 1, "a_uv");
-        glBindAttribLocation(m_program, 2, "a_color");
+        glBindAttribLocation(m_program, 1, "a_color");
 
         glLinkProgram(m_program);
 
-        int loc_a_position = glGetAttribLocation(m_program, "a_position");
-        int loc_a_uv = glGetAttribLocation(m_program, "a_uv");
-        int loc_a_color = glGetAttribLocation(m_program, "a_color");
-
-        int loc_u_mvp = glGetUniformLocation(m_program, "u_mvp");
-        int loc_u_tex = glGetUniformLocation(m_program, "u_tex");
-
         // vb
         glGenBuffers(1, &m_vb);
+        glBindBuffer(GL_ARRAY_BUFFER, m_vb);
+
+        Vertex vertices[3] = {
+            { Vector3(-0.5f, 0.5f, 0), Vector2(0, 0), Color(1, 0, 0, 1) },
+            { Vector3(-0.5f, -0.5f, 0), Vector2(0, 1), Color(0, 1, 0, 1) },
+            { Vector3(0.5f, -0.5f, 0), Vector2(1, 1), Color(0, 0, 1, 1) },
+        };
+        glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), &vertices[0], GL_STATIC_DRAW);
 
         // ib
         glGenBuffers(1, &m_ib);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_ib);
+
+        unsigned short indices[6] = { 0, 1, 2, 0, 2, 3 };
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), &indices[0], GL_STATIC_DRAW);
 
         // for test api
         {
@@ -143,9 +174,8 @@ void main()\n\
             glGetAttachedShaders(m_program, 10, &count, shaders);
 
             glIsBuffer(m_vb);
+            glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(vertices), &vertices[0]);
         }
-
-        //glBindBuffer
 
         //glFramebufferTexture2D
 
@@ -188,6 +218,24 @@ void main()\n\
     void Draw()
     {
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+
+        int loc_a_position = glGetAttribLocation(m_program, "a_position");
+        int loc_a_color = glGetAttribLocation(m_program, "a_color");
+
+        glBindBuffer(GL_ARRAY_BUFFER, m_vb);
+
+        glVertexAttribPointer(loc_a_position, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (const void*) 0);
+        glVertexAttribPointer(loc_a_color, 4, GL_FLOAT, GL_FALSE, sizeof(Vertex), (const void*) (sizeof(Vector3) + sizeof(Vector2)));
+        glEnableVertexAttribArray(loc_a_position);
+        glEnableVertexAttribArray(loc_a_color);
+
+        glUseProgram(m_program);
+
+        //glDrawArrays
+        //glDrawElements
+
+        glDisableVertexAttribArray(loc_a_position);
+        glDisableVertexAttribArray(loc_a_color);
     }
 
     GLuint m_fb;

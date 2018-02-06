@@ -16,6 +16,9 @@
 */
 
 #include "GLBuffer.h"
+#include "memory/Memory.h"
+
+using namespace Viry3D;
 
 namespace sgl
 {
@@ -23,11 +26,20 @@ namespace sgl
     {
     public:
         GLBufferPrivate(GLBuffer* p):
-            m_p(p)
+            m_p(p),
+            m_data(nullptr),
+            m_data_size(0)
         {
         }
 
+        ~GLBufferPrivate()
+        {
+            Memory::SafeFree(m_data);
+        }
+
         GLBuffer* m_p;
+        GLbyte* m_data;
+        int m_data_size;
     };
 
     GLBuffer::GLBuffer(GLuint id):
@@ -39,5 +51,42 @@ namespace sgl
     GLBuffer::~GLBuffer()
     {
         delete m_private;
+    }
+
+    void GLBuffer::BufferData(GLsizeiptr size, const void* data, GLenum usage)
+    {
+        if (size < 0)
+        {
+            return;
+        }
+
+        if (m_private->m_data == nullptr || m_private->m_data_size != size)
+        {
+            m_private->m_data_size = size;
+
+            if (size == 0)
+            {
+                Memory::SafeFree(m_private->m_data);
+            }
+            else
+            {
+                m_private->m_data = Memory::Realloc(m_private->m_data, size);
+            }
+        }
+
+        if (data && size > 0)
+        {
+            Memory::Copy(m_private->m_data, data, size);
+        }
+    }
+
+    void GLBuffer::BufferSubData(GLintptr offset, GLsizeiptr size, const void* data)
+    {
+        if (offset < 0 || size <= 0 || offset + size > m_private->m_data_size || m_private->m_data == nullptr || data == nullptr)
+        {
+            return;
+        }
+
+        Memory::Copy(&m_private->m_data[offset], data, size);
     }
 }

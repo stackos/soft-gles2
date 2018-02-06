@@ -66,8 +66,14 @@ namespace sgl
             Vector<String> uniforms_vs = m_shaders[0]->GetUniforms();
             Vector<String> uniforms_fs = m_shaders[1]->GetUniforms();
             Vector<String> uniforms;
-            uniforms.AddRange(&uniforms_vs[0], uniforms_vs.Size());
-            uniforms.AddRange(&uniforms_fs[0], uniforms_fs.Size());
+            if (uniforms_vs.Size() > 0)
+            {
+                uniforms.AddRange(&uniforms_vs[0], uniforms_vs.Size());
+            }
+            if (uniforms_fs.Size() > 0)
+            {
+                uniforms.AddRange(&uniforms_fs[0], uniforms_fs.Size());
+            }
 
             m_uniforms.Clear();
             for (int i = 0; i < uniforms.Size(); ++i)
@@ -185,8 +191,8 @@ namespace sgl
             return;
         }
 
-        //const String vs_path = "C:\\Program Files (x86)\\Microsoft Visual Studio\\2017\\Community";
-        const String vs_path = "D:\\Program\\VS2017";
+        const String vs_path = "C:\\Program Files (x86)\\Microsoft Visual Studio\\2017\\Community";
+        //const String vs_path = "D:\\Program\\VS2017";
         const bool isX64 = sizeof(void*) == 8;
         const String host = "Hostx64"; // "Hostx86"
         String cl_dir;

@@ -28,6 +28,9 @@ namespace sgl
         GLBuffer(GLuint id);
         virtual ~GLBuffer();
 
+        void BufferData(GLsizeiptr size, const void* data, GLenum usage);
+        void BufferSubData(GLintptr offset, GLsizeiptr size, const void* data);
+
     private:
         friend class GLBufferPrivate;
         GLBufferPrivate* m_private;
