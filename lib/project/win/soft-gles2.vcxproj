@@ -21,6 +21,7 @@
   <ItemGroup>
     <ClCompile Include="..\..\src\Debug.cpp" />
     <ClCompile Include="..\..\src\exec_cmd.cpp" />
+    <ClCompile Include="..\..\src\GLBuffer.cpp" />
     <ClCompile Include="..\..\src\GLContext.cpp" />
     <ClCompile Include="..\..\src\GLFramebuffer.cpp" />
     <ClCompile Include="..\..\src\GLProgram.cpp" />
@@ -82,6 +83,7 @@
     <ClInclude Include="..\..\src\container\Vector.h" />
     <ClInclude Include="..\..\src\Debug.h" />
     <ClInclude Include="..\..\src\exec_cmd.h" />
+    <ClInclude Include="..\..\src\GLBuffer.h" />
     <ClInclude Include="..\..\src\GLFramebuffer.h" />
     <ClInclude Include="..\..\src\GLObject.h" />
     <ClInclude Include="..\..\src\GLProgram.h" />

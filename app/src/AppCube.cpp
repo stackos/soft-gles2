@@ -30,28 +30,28 @@ public:
         glClearDepthf(1);
         glClearStencil(0);
 
-        // color rbo
-        glGenRenderbuffers(1, &m_rbo_color);
-        glBindRenderbuffer(GL_RENDERBUFFER, m_rbo_color);
+        // color rb
+        glGenRenderbuffers(1, &m_rb_color);
+        glBindRenderbuffer(GL_RENDERBUFFER, m_rb_color);
         glRenderbufferStorage(GL_RENDERBUFFER, GL_RGB565, 1280, 720);
         
-        // depth rbo
-        glGenRenderbuffers(1, &m_rbo_depth);
-        glBindRenderbuffer(GL_RENDERBUFFER, m_rbo_depth);
+        // depth rb
+        glGenRenderbuffers(1, &m_rb_depth);
+        glBindRenderbuffer(GL_RENDERBUFFER, m_rb_depth);
         glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT16, 1280, 720);
 
-        // stencil rbo
-        glGenRenderbuffers(1, &m_rbo_stencil);
-        glBindRenderbuffer(GL_RENDERBUFFER, m_rbo_stencil);
+        // stencil rb
+        glGenRenderbuffers(1, &m_rb_stencil);
+        glBindRenderbuffer(GL_RENDERBUFFER, m_rb_stencil);
         glRenderbufferStorage(GL_RENDERBUFFER, GL_STENCIL_INDEX8, 1280, 720);
 
-        // fbo
-        glGenFramebuffers(1, &m_fbo);
-        glBindFramebuffer(GL_FRAMEBUFFER, m_fbo);
+        // fb
+        glGenFramebuffers(1, &m_fb);
+        glBindFramebuffer(GL_FRAMEBUFFER, m_fb);
 
-        glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_RENDERBUFFER, m_rbo_color);
-        glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, m_rbo_depth);
-        glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_STENCIL_ATTACHMENT, GL_RENDERBUFFER, m_rbo_stencil);
+        glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_RENDERBUFFER, m_rb_color);
+        glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, m_rb_depth);
+        glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_STENCIL_ATTACHMENT, GL_RENDERBUFFER, m_rb_stencil);
 
         GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
         if (status == GL_FRAMEBUFFER_COMPLETE)
@@ -59,6 +59,7 @@ public:
             Log("frame buffer status ok");
         }
 
+        // shader
         GLuint vs = glCreateShader(GL_VERTEX_SHADER);
         const char* vs_src = "\
 uniform mat4 u_mvp;\n\
@@ -107,13 +108,19 @@ void main()\n\
         int loc_u_mvp = glGetUniformLocation(m_program, "u_mvp");
         int loc_u_tex = glGetUniformLocation(m_program, "u_tex");
 
+        // vb
+        glGenBuffers(1, &m_vb);
+
+        // ib
+        glGenBuffers(1, &m_ib);
+
         // for test api
         {
-            glIsRenderbuffer(m_rbo_color);
+            glIsRenderbuffer(m_rb_color);
             GLint width;
             glGetRenderbufferParameteriv(GL_RENDERBUFFER, GL_RENDERBUFFER_WIDTH, &width);
 
-            glIsFramebuffer(m_fbo);
+            glIsFramebuffer(m_fb);
             GLint type;
             glGetFramebufferAttachmentParameteriv(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_FRAMEBUFFER_ATTACHMENT_OBJECT_TYPE, &type);
             GLint name;
@@ -134,11 +141,10 @@ void main()\n\
             int count;
             GLuint shaders[10];
             glGetAttachedShaders(m_program, 10, &count, shaders);
+
+            glIsBuffer(m_vb);
         }
 
-        //glGenBuffers
-        //glDeleteBuffers
-        //glIsBuffer
         //glBindBuffer
 
         //glFramebufferTexture2D
@@ -170,11 +176,13 @@ void main()\n\
 
     virtual ~Renderer()
     {
-        glDeleteFramebuffers(1, &m_fbo);
-        glDeleteRenderbuffers(1, &m_rbo_color);
-        glDeleteRenderbuffers(1, &m_rbo_depth);
-        glDeleteRenderbuffers(1, &m_rbo_stencil);
+        glDeleteFramebuffers(1, &m_fb);
+        glDeleteRenderbuffers(1, &m_rb_color);
+        glDeleteRenderbuffers(1, &m_rb_depth);
+        glDeleteRenderbuffers(1, &m_rb_stencil);
         glDeleteProgram(m_program);
+        glDeleteBuffers(1, &m_vb);
+        glDeleteBuffers(1, &m_ib);
     }
 
     void Draw()
@@ -182,11 +190,13 @@ void main()\n\
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
     }
 
-    GLuint m_fbo;
-    GLuint m_rbo_color;
-    GLuint m_rbo_depth;
-    GLuint m_rbo_stencil;
+    GLuint m_fb;
+    GLuint m_rb_color;
+    GLuint m_rb_depth;
+    GLuint m_rb_stencil;
     GLuint m_program;
+    GLuint m_vb;
+    GLuint m_ib;
 };
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShowCmd)

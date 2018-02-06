@@ -19,16 +19,16 @@
 
 #include "GLES2/gl2.h"
 #include "GLES2/gl2ext.h"
+#include "Debug.h"
+#include "math/Mathf.h"
+#include "container/Map.h"
 #include "GLObject.h"
 #include "GLFramebuffer.h"
 #include "GLRenderbuffer.h"
 #include "GLTexture.h"
 #include "GLShader.h"
 #include "GLProgram.h"
-#include "Debug.h"
-#include "math/Mathf.h"
-#include "container/Map.h"
-
+#include "GLBuffer.h"
 #include <functional>
 
 using namespace Viry3D;
@@ -176,9 +176,9 @@ namespace sgl
         void DeleteFramebuffers(GLsizei n, const GLuint* framebuffers)
         {
             this->DeleteObjects<GLFramebuffer>(n, framebuffers, [this](const Ref<GLObject>& obj) {
-                if (!m_current_fbo.expired() && m_current_fbo.lock() == obj)
+                if (!m_current_fb.expired() && m_current_fb.lock() == obj)
                 {
-                    m_current_fbo.reset();
+                    m_current_fb.reset();
                 }
             });
         }
@@ -194,14 +194,14 @@ namespace sgl
             {
                 if (framebuffer == 0)
                 {
-                    m_current_fbo.reset();
+                    m_current_fb.reset();
                 }
                 else
                 {
-                    Ref<GLFramebuffer> fbo = this->ObjectGet<GLFramebuffer>(framebuffer);
-                    if (fbo)
+                    Ref<GLFramebuffer> fb = this->ObjectGet<GLFramebuffer>(framebuffer);
+                    if (fb)
                     {
-                        m_current_fbo = fbo;
+                        m_current_fb = fb;
                     }
                 }
             }
@@ -213,19 +213,19 @@ namespace sgl
             {
                 if (renderbuffertarget == GL_RENDERBUFFER)
                 {
-                    if (!m_current_fbo.expired())
+                    if (!m_current_fb.expired())
                     {
-                        Ref<GLFramebuffer> fbo = m_current_fbo.lock();
-                        Ref<GLRenderbuffer> rbo;
+                        Ref<GLFramebuffer> fb = m_current_fb.lock();
+                        Ref<GLRenderbuffer> rb;
                         if (renderbuffer > 0)
                         {
-                            rbo = this->ObjectGet<GLRenderbuffer>(renderbuffer);
+                            rb = this->ObjectGet<GLRenderbuffer>(renderbuffer);
                         }
 
-                        GLFramebuffer::Attachment attach = fbo->GetAttachment(attachment);
+                        GLFramebuffer::Attachment attach = fb->GetAttachment(attachment);
                         if (attach != GLFramebuffer::Attachment::None)
                         {
-                            fbo->SetAttachment(attach, rbo);
+                            fb->SetAttachment(attach, rb);
                         }
                     }
                 }
@@ -236,14 +236,14 @@ namespace sgl
         {
             if (target == GL_FRAMEBUFFER)
             {
-                if (!m_current_fbo.expired())
+                if (!m_current_fb.expired())
                 {
-                    Ref<GLFramebuffer> fbo = m_current_fbo.lock();
+                    Ref<GLFramebuffer> fb = m_current_fb.lock();
                     
-                    GLFramebuffer::Attachment attach = fbo->GetAttachment(attachment);
+                    GLFramebuffer::Attachment attach = fb->GetAttachment(attachment);
                     if (attach != GLFramebuffer::Attachment::None)
                     {
-                        fbo->GetAttachmentParameteriv(attach, pname, params);
+                        fb->GetAttachmentParameteriv(attach, pname, params);
                     }
                 }
             }
@@ -253,10 +253,10 @@ namespace sgl
         {
             if (target == GL_FRAMEBUFFER)
             {
-                if (!m_current_fbo.expired())
+                if (!m_current_fb.expired())
                 {
-                    Ref<GLFramebuffer> fbo = m_current_fbo.lock();
-                    return fbo->CheckStatus();
+                    Ref<GLFramebuffer> fb = m_current_fb.lock();
+                    return fb->CheckStatus();
                 }
             }
 
@@ -289,7 +289,7 @@ namespace sgl
                     return;
             }
 
-            if (!m_current_fbo.expired())
+            if (!m_current_fb.expired())
             {
                 color_buffer = (unsigned char*) this->GetFramebufferAttachmentBuffer(GLFramebuffer::Attachment::Color0, buffer_width, buffer_height);
             }
@@ -306,17 +306,17 @@ namespace sgl
         {
             void* buffer = nullptr;
 
-            Ref<GLFramebuffer> fbo = m_current_fbo.lock();
+            Ref<GLFramebuffer> fb = m_current_fb.lock();
             GLint attached_type;
             GLint attached_obj;
-            fbo->GetAttachmentParameteriv(attachment, GL_FRAMEBUFFER_ATTACHMENT_OBJECT_TYPE, &attached_type);
-            fbo->GetAttachmentParameteriv(attachment, GL_FRAMEBUFFER_ATTACHMENT_OBJECT_NAME, &attached_obj);
+            fb->GetAttachmentParameteriv(attachment, GL_FRAMEBUFFER_ATTACHMENT_OBJECT_TYPE, &attached_type);
+            fb->GetAttachmentParameteriv(attachment, GL_FRAMEBUFFER_ATTACHMENT_OBJECT_NAME, &attached_obj);
             if (attached_type == GL_RENDERBUFFER)
             {
-                Ref<GLRenderbuffer> rbo = this->ObjectGet<GLRenderbuffer>(attached_obj);
-                buffer = rbo->GetBuffer();
-                width = rbo->GetWidth();
-                height = rbo->GetHeight();
+                Ref<GLRenderbuffer> rb = this->ObjectGet<GLRenderbuffer>(attached_obj);
+                buffer = rb->GetBuffer();
+                width = rb->GetWidth();
+                height = rb->GetHeight();
             }
             else if (attached_type == GL_TEXTURE)
             {
@@ -334,9 +334,9 @@ namespace sgl
         void DeleteRenderbuffers(GLsizei n, const GLuint* renderbuffers)
         {
             this->DeleteObjects<GLRenderbuffer>(n, renderbuffers, [this](const Ref<GLObject>& obj) {
-                if (!m_current_rbo.expired() && m_current_rbo.lock() == obj)
+                if (!m_current_rb.expired() && m_current_rb.lock() == obj)
                 {
-                    m_current_rbo.reset();
+                    m_current_rb.reset();
                 }
             });
         }
@@ -352,14 +352,14 @@ namespace sgl
             {
                 if (renderbuffer == 0)
                 {
-                    m_current_rbo.reset();
+                    m_current_rb.reset();
                 }
                 else
                 {
-                    Ref<GLRenderbuffer> rbo = this->ObjectGet<GLRenderbuffer>(renderbuffer);
-                    if (rbo)
+                    Ref<GLRenderbuffer> rb = this->ObjectGet<GLRenderbuffer>(renderbuffer);
+                    if (rb)
                     {
-                        m_current_rbo = rbo;
+                        m_current_rb = rb;
                     }
                 }
             }
@@ -369,10 +369,10 @@ namespace sgl
         {
             if (target == GL_RENDERBUFFER)
             {
-                if (!m_current_rbo.expired())
+                if (!m_current_rb.expired())
                 {
-                    Ref<GLRenderbuffer> rbo = m_current_rbo.lock();
-                    rbo->Storage(internalformat, width, height);
+                    Ref<GLRenderbuffer> rb = m_current_rb.lock();
+                    rb->Storage(internalformat, width, height);
                 }
             }
         }
@@ -381,38 +381,38 @@ namespace sgl
         {
             if (target == GL_RENDERBUFFER)
             {
-                if (!m_current_rbo.expired())
+                if (!m_current_rb.expired())
                 {
-                    Ref<GLRenderbuffer> rbo = m_current_rbo.lock();
+                    Ref<GLRenderbuffer> rb = m_current_rb.lock();
 
                     switch (pname)
                     {
                         case GL_RENDERBUFFER_WIDTH:
-                            *params = rbo->GetWidth();
+                            *params = rb->GetWidth();
                             break;
                         case GL_RENDERBUFFER_HEIGHT:
-                            *params = rbo->GetHeight();
+                            *params = rb->GetHeight();
                             break;
                         case GL_RENDERBUFFER_INTERNAL_FORMAT:
-                            *params = rbo->GetInternalFormat();
+                            *params = rb->GetInternalFormat();
                             break;
                         case GL_RENDERBUFFER_RED_SIZE:
-                            *params = rbo->GetRedComponentSize();
+                            *params = rb->GetRedComponentSize();
                             break;
                         case GL_RENDERBUFFER_GREEN_SIZE:
-                            *params = rbo->GetGreenComponentSize();
+                            *params = rb->GetGreenComponentSize();
                             break;
                         case GL_RENDERBUFFER_BLUE_SIZE:
-                            *params = rbo->GetBlueComponentSize();
+                            *params = rb->GetBlueComponentSize();
                             break;
                         case GL_RENDERBUFFER_ALPHA_SIZE:
-                            *params = rbo->GetAlphaComponentSize();
+                            *params = rb->GetAlphaComponentSize();
                             break;
                         case GL_RENDERBUFFER_DEPTH_SIZE:
-                            *params = rbo->GetDepthSize();
+                            *params = rb->GetDepthSize();
                             break;
                         case GL_RENDERBUFFER_STENCIL_SIZE:
-                            *params = rbo->GetStencilSize();
+                            *params = rb->GetStencilSize();
                             break;
                         default:
                             *params = 0;
@@ -461,7 +461,7 @@ namespace sgl
             int buffer_width = m_default_buffer_width;
             int buffer_height = m_default_buffer_height;
 
-            if (!m_current_fbo.expired())
+            if (!m_current_fb.expired())
             {
                 color_buffer = (unsigned char*) this->GetFramebufferAttachmentBuffer(GLFramebuffer::Attachment::Color0, buffer_width, buffer_height);
                 depth_buffer = (float*) this->GetFramebufferAttachmentBuffer(GLFramebuffer::Attachment::Depth, buffer_width, buffer_height);
@@ -649,6 +649,21 @@ namespace sgl
             return -1;
         }
         
+        void GenBuffers(GLsizei n, GLuint* buffers)
+        {
+            this->GenObjects<GLBuffer>(n, buffers);
+        }
+
+        void DeleteBuffers(GLsizei n, const GLuint* buffers)
+        {
+            this->DeleteObjects<GLBuffer>(n, buffers);
+        }
+
+        GLboolean IsBuffer(GLuint buffer)
+        {
+            return this->ObjectIs<GLBuffer>(buffer);
+        }
+
         /*
         struct Vector2i
         {
@@ -1143,8 +1158,8 @@ namespace sgl
 
         Map<GLuint, Ref<GLObject>> m_objects;
         GLuint m_gen_id;
-        WeakRef<GLFramebuffer> m_current_fbo;
-        WeakRef<GLRenderbuffer> m_current_rbo;
+        WeakRef<GLFramebuffer> m_current_fb;
+        WeakRef<GLRenderbuffer> m_current_rb;
         int m_viewport_x;
         int m_viewport_y;
         int m_viewport_width;
@@ -1273,3 +1288,8 @@ IMPLEMENT_VOID_GL_FUNC_3(BindAttribLocation, GLuint, GLuint, const GLchar*)
 IMPLEMENT_VOID_GL_FUNC_1(LinkProgram, GLuint)
 IMPLEMENT_GL_FUNC_2(GLint, GetAttribLocation, GLuint, const GLchar*)
 IMPLEMENT_GL_FUNC_2(GLint, GetUniformLocation, GLuint, const GLchar*)
+
+// Buffer
+IMPLEMENT_VOID_GL_FUNC_2(GenBuffers, GLsizei, GLuint*)
+IMPLEMENT_VOID_GL_FUNC_2(DeleteBuffers, GLsizei, const GLuint*)
+IMPLEMENT_GL_FUNC_1(GLboolean, IsBuffer, GLuint)
