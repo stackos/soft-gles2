@@ -44,9 +44,10 @@ namespace sgl
         Viry3D::ByteBuffer GetBinary() const;
 
     private:
-        void BindAttribLocations(const Viry3D::Map<Viry3D::String, GLuint>& bind_attribs);
+        const Viry3D::Vector<Viry3D::String>& GetVertexAttribs() const;
         const Viry3D::Vector<Viry3D::String>& GetUniforms() const;
-        GLint GetAttribLocation(const GLchar* name) const;
+        Viry3D::Vector<Viry3D::String> GetVaryingNames() const;
+        Viry3D::Vector<Viry3D::String> GetVaryingTypes() const;
 
     private:
         friend class GLShaderPrivate;

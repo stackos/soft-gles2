@@ -17,23 +17,25 @@
 
 #pragma once
 
-#include "GLObject.h"
+#include "GLProgram.h"
+#include "math/Vector4.h"
+#include "container/Vector.h"
 
 namespace sgl
 {
-    class GLBufferPrivate;
-    class GLBuffer: public GLObject
+    class GLRasterizer
     {
     public:
-        GLBuffer(GLuint id);
-        virtual ~GLBuffer();
-
-        void BufferData(GLsizeiptr size, const void* data, GLenum usage);
-        void BufferSubData(GLintptr offset, GLsizeiptr size, const void* data);
-        void* GetData() const;
+        GLRasterizer(const Viry3D::Vector4* positions, const Viry3D::Vector<GLProgram::Varying>* varyings):
+            m_positions(positions),
+            m_varyings(varyings)
+        {
+        }
+        void Run();
 
     private:
-        friend class GLBufferPrivate;
-        GLBufferPrivate* m_private;
+        const Viry3D::Vector4* m_positions;
+        const Viry3D::Vector<GLProgram::Varying>* m_varyings;
     };
 }
+ 

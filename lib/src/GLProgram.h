@@ -19,6 +19,8 @@
 
 #include "GLObject.h"
 #include "memory/Ref.h"
+#include "container/Vector.h"
+#include "string/String.h"
 
 namespace sgl
 {
@@ -28,6 +30,38 @@ namespace sgl
     class GLProgram: public GLObject
     {
     public:
+        typedef void*(*VarGetter)();
+        typedef void(*VarSetter)(void*, int);
+        typedef void(*Main)();
+
+        enum class VaryingType
+        {
+            None,
+
+            Vec2,
+            Vec3,
+            Vec4,
+        };
+
+        struct Varying
+        {
+            Viry3D::String name;
+            VaryingType type;
+            int size;
+            float value[4];
+            VarGetter getter;
+            VarSetter setter;
+            
+            Varying(const Viry3D::String& name):
+                name(name),
+                type(VaryingType::None),
+                size(0),
+                getter(nullptr),
+                setter(nullptr)
+            {
+            }
+        };
+
         GLProgram(GLuint id);
         virtual ~GLProgram();
 
@@ -38,6 +72,11 @@ namespace sgl
         void Link();
         GLint GetAttribLocation(const GLchar* name) const;
         GLint GetUniformLocation(const GLchar* name) const;
+        void Use();
+        void SetVertexAttrib(GLuint index, const void* data, int size) const;
+        void* CallVSMain() const;
+        Viry3D::Vector<Varying> GetVaryings() const;
+        void* CallFSMain() const;
 
     private:
         friend class GLProgramPrivate;

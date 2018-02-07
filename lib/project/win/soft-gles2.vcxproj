@@ -25,6 +25,7 @@
     <ClCompile Include="..\..\src\GLContext.cpp" />
     <ClCompile Include="..\..\src\GLFramebuffer.cpp" />
     <ClCompile Include="..\..\src\GLProgram.cpp" />
+    <ClCompile Include="..\..\src\GLRasterizer.cpp" />
     <ClCompile Include="..\..\src\GLShader.cpp" />
     <ClCompile Include="..\..\src\graphics\Image.cpp" />
     <ClCompile Include="..\..\src\io\Directory.cpp" />
@@ -87,6 +88,7 @@
     <ClInclude Include="..\..\src\GLFramebuffer.h" />
     <ClInclude Include="..\..\src\GLObject.h" />
     <ClInclude Include="..\..\src\GLProgram.h" />
+    <ClInclude Include="..\..\src\GLRasterizer.h" />
     <ClInclude Include="..\..\src\GLRenderbuffer.h" />
     <ClInclude Include="..\..\src\GLShader.h" />
     <ClInclude Include="..\..\src\GLTexture.h" />

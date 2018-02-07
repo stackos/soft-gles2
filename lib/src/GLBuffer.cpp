@@ -89,4 +89,9 @@ namespace sgl
 
         Memory::Copy(&m_private->m_data[offset], data, size);
     }
+
+    void* GLBuffer::GetData() const
+    {
+        return m_private->m_data;
+    }
 }

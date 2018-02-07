@@ -20,7 +20,6 @@
 #include "Debug.h"
 #include "memory/Memory.h"
 #include "io/File.h"
-#include "math/Mathf.h"
 
 using namespace Viry3D;
 
@@ -29,14 +28,14 @@ namespace sgl
     class GLShaderPrivate
     {
     public:
-        struct Attribute
+        struct Varying
         {
             String name;
-            int location;
+            String type;
 
-            Attribute(const String& name):
+            Varying(const String& name, const String& type):
                 name(name),
-                location(-1)
+                type(type)
             {
             }
         };
@@ -53,10 +52,10 @@ namespace sgl
             src = src.Replace("\t", " ").Replace("\r", " ").Replace("\n", " ");
             Vector<String> sentences = src.Split(";", true);
 
-            Vector<String> varyings;
             Vector<String> builtins;
             m_uniforms.Clear();
             m_attributes.Clear();
+            m_varyings.Clear();
 
             for (int i = 0; i < sentences.Size(); ++i)
             {
@@ -69,7 +68,7 @@ namespace sgl
                 }
                 else if (words[0] == "varying")
                 {
-                    varyings.Add(words[2]);
+                    m_varyings.Add(Varying(words[2], words[1]));
                 }
                 else
                 {
@@ -77,7 +76,7 @@ namespace sgl
                     {
                         if (words[0] == "attribute")
                         {
-                            m_attributes.Add(Attribute(words[2]));
+                            m_attributes.Add(words[2]);
                         }
                         else if (s.Contains(" main("))
                         {
@@ -124,19 +123,19 @@ namespace sgl
             {
                 for (int i = 0; i < m_attributes.Size(); ++i)
                 {
-                    src += String::Format("VAR_SETTER(%s)\n", m_attributes[i].name.CString());
+                    src += String::Format("VAR_SETTER(%s)\n", m_attributes[i].CString());
                 }
 
-                for (int i = 0; i < varyings.Size(); ++i)
+                for (int i = 0; i < m_varyings.Size(); ++i)
                 {
-                    src += String::Format("VAR_GETTER(%s)\n", varyings[i].CString());
+                    src += String::Format("VAR_GETTER(%s)\n", m_varyings[i].name.CString());
                 }
             }
             else if (m_p->m_type == GL_FRAGMENT_SHADER)
             {
-                for (int i = 0; i < varyings.Size(); ++i)
+                for (int i = 0; i < m_varyings.Size(); ++i)
                 {
-                    src += String::Format("VAR_SETTER(%s)\n", varyings[i].CString());
+                    src += String::Format("VAR_SETTER(%s)\n", m_varyings[i].name.CString());
                 }
             }
 
@@ -150,7 +149,8 @@ namespace sgl
 
         GLShader* m_p;
         Vector<String> m_uniforms;
-        Vector<Attribute> m_attributes;
+        Vector<String> m_attributes;
+        Vector<Varying> m_varyings;
         ByteBuffer m_obj_bin;
     };
 
@@ -211,8 +211,8 @@ namespace sgl
 
     void GLShader::Compile()
     {
-        const String vs_path = "C:\\Program Files (x86)\\Microsoft Visual Studio\\2017\\Community";
-        //const String vs_path = "D:\\Program\\VS2017";
+        //const String vs_path = "C:\\Program Files (x86)\\Microsoft Visual Studio\\2017\\Community";
+        const String vs_path = "D:\\Program\\VS2017";
         const bool isX64 = sizeof(void*) == 8;
         const String host = "Hostx64"; // "Hostx86"
         String cl_dir;
@@ -251,31 +251,9 @@ namespace sgl
         return m_private->m_obj_bin;
     }
 
-    void GLShader::BindAttribLocations(const Map<String, GLuint>& bind_attribs)
+    const Vector<String>& GLShader::GetVertexAttribs() const
     {
-        int max_index = -1;
-
-        for (const auto& i : bind_attribs)
-        {
-            for (auto& j : m_private->m_attributes)
-            {
-                if (i.first == j.name)
-                {
-                    j.location = i.second;
-
-                    max_index = Mathf::Max(max_index, j.location);
-                    break;
-                }
-            }
-        }
-
-        for (auto& i : m_private->m_attributes)
-        {
-            if (i.location < 0)
-            {
-                i.location = ++max_index;
-            }
-        }
+        return m_private->m_attributes;
     }
 
     const Vector<String>& GLShader::GetUniforms() const
@@ -283,20 +261,23 @@ namespace sgl
         return m_private->m_uniforms;
     }
 
-    GLint GLShader::GetAttribLocation(const GLchar* name) const
+    Vector<String> GLShader::GetVaryingNames() const
     {
-        for (auto& i : m_private->m_attributes)
+        Vector<String> names;
+        for (const auto& i : m_private->m_varyings)
         {
-            if (i.name == name)
-            {
-                if (i.location >= 0)
-                {
-                    return i.location;
-                }
-                break;
-            }
+            names.Add(i.name);
         }
+        return names;
+    }
 
-        return -1;
+    Vector<String> GLShader::GetVaryingTypes() const
+    {
+        Vector<String> types;
+        for (const auto& i : m_private->m_varyings)
+        {
+            types.Add(i.type);
+        }
+        return types;
     }
 }

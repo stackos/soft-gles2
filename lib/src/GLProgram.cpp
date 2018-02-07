@@ -21,7 +21,13 @@
 #include "io/File.h"
 #include "string/String.h"
 #include "container/Map.h"
+#include "math/Mathf.h"
+#include "math/Vector2.h"
+#include "math/Vector3.h"
+#include "math/Vector4.h"
+#include "memory/Memory.h"
 #include "Debug.h"
+#include <Windows.h>
 
 using namespace Viry3D;
 
@@ -30,20 +36,41 @@ namespace sgl
     class GLProgramPrivate
     {
     public:
+        struct Attribute
+        {
+            String name;
+            int location;
+            GLProgram::VarSetter setter;
+
+            Attribute(const String& name):
+                name(name),
+                location(-1),
+                setter(nullptr)
+            {
+            }
+        };
+
         struct Uniform
         {
             String name;
             int location;
+            GLProgram::VarSetter setter;
 
             Uniform(const String& name):
                 name(name),
-                location(-1)
+                location(-1),
+                setter(nullptr)
             {
             }
         };
 
         GLProgramPrivate(GLProgram* p):
-            m_p(p)
+            m_p(p),
+            m_dll(nullptr),
+            m_vs_main(nullptr),
+            m_fs_main(nullptr),
+            m_get_gl_Position(nullptr),
+            m_get_gl_FragColor(nullptr)
         {
         }
 
@@ -54,11 +81,51 @@ namespace sgl
             File::Delete(dll_name + ".dll");
             File::Delete(dll_name + ".exp");
             File::Delete(dll_name + ".lib");
+
+            if (m_dll)
+            {
+                FreeLibrary(m_dll);
+                m_dll = nullptr;
+            }
         }
 
         String GetTempDllName()
         {
             return String::Format("temp.p.%d", m_p->GetId());
+        }
+
+        void BindAttribLocations()
+        {
+            Vector<String> attribs = m_shaders[0]->GetVertexAttribs();
+            m_attribs.Clear();
+            for (const String& i : attribs)
+            {
+                m_attribs.Add(Attribute(i));
+            }
+
+            int max_index = -1;
+
+            for (const auto& i : m_bind_attribs)
+            {
+                for (auto& j : m_attribs)
+                {
+                    if (i.first == j.name)
+                    {
+                        j.location = i.second;
+
+                        max_index = Mathf::Max(max_index, j.location);
+                        break;
+                    }
+                }
+            }
+
+            for (auto& i : m_attribs)
+            {
+                if (i.location < 0)
+                {
+                    i.location = ++max_index;
+                }
+            }
         }
 
         void BindUniformLocations()
@@ -101,7 +168,15 @@ namespace sgl
         GLProgram* m_p;
         Ref<GLShader> m_shaders[2];
         Map<String, GLuint> m_bind_attribs;
+        Vector<Attribute> m_attribs;
         Vector<Uniform> m_uniforms;
+        Vector<GLProgram::Varying> m_vs_varyings;
+        Vector<GLProgram::Varying> m_fs_varyings;
+        HMODULE m_dll;
+        GLProgram::Main m_vs_main;
+        GLProgram::Main m_fs_main;
+        GLProgram::VarGetter m_get_gl_Position;
+        GLProgram::VarGetter m_get_gl_FragColor;
     };
 
     GLProgram::GLProgram(GLuint id):
@@ -191,8 +266,8 @@ namespace sgl
             return;
         }
 
-        const String vs_path = "C:\\Program Files (x86)\\Microsoft Visual Studio\\2017\\Community";
-        //const String vs_path = "D:\\Program\\VS2017";
+        //const String vs_path = "C:\\Program Files (x86)\\Microsoft Visual Studio\\2017\\Community";
+        const String vs_path = "D:\\Program\\VS2017";
         const bool isX64 = sizeof(void*) == 8;
         const String host = "Hostx64"; // "Hostx86"
         String cl_dir;
@@ -234,7 +309,7 @@ namespace sgl
         File::Delete(temp_fs_obj_name);
         File::Delete(temp_out_name);
 
-        m_private->m_shaders[0]->BindAttribLocations(m_private->m_bind_attribs);
+        m_private->BindAttribLocations();
         m_private->BindUniformLocations();
 
         Log("Link info:\n%sgen dll:%s.dll", out_text.CString(), dll_name.CString());
@@ -242,9 +317,12 @@ namespace sgl
 
     GLint GLProgram::GetAttribLocation(const GLchar* name) const
     {
-        if (m_private->m_shaders[0])
+        for (auto& i : m_private->m_attribs)
         {
-            return m_private->m_shaders[0]->GetAttribLocation(name);
+            if (i.name == name)
+            {
+                return i.location;
+            }
         }
 
         return -1;
@@ -262,5 +340,135 @@ namespace sgl
         }
 
         return -1;
+    }
+
+    void GLProgram::Use()
+    {
+        if (m_private->m_dll == nullptr)
+        {
+            HMODULE dll = LoadLibrary((m_private->GetTempDllName() + ".dll").CString());
+            m_private->m_dll = dll;
+
+            assert(dll != nullptr);
+
+            for (auto& i : m_private->m_attribs)
+            {
+                String func_name = "set_" + i.name;
+                i.setter = (VarSetter) GetProcAddress(dll, func_name.CString());
+            }
+
+            for (auto& i : m_private->m_uniforms)
+            {
+                String func_name = "set_" + i.name;
+                i.setter = (VarSetter) GetProcAddress(dll, func_name.CString());
+            }
+
+            m_private->m_vs_main = (Main) GetProcAddress(dll, "vs_main");
+            m_private->m_get_gl_Position = (VarGetter) GetProcAddress(dll, "get_gl_Position");
+            
+            m_private->m_fs_main = (Main) GetProcAddress(dll, "fs_main");
+            m_private->m_get_gl_FragColor = (VarGetter) GetProcAddress(dll, "get_gl_FragColor");
+
+            m_private->m_vs_varyings.Clear();
+            Vector<String> varying_names = m_private->m_shaders[0]->GetVaryingNames();
+            Vector<String> varying_types = m_private->m_shaders[0]->GetVaryingTypes();
+            for (int i = 0; i < varying_names.Size(); ++i)
+            {
+                Varying v(varying_names[i]);
+                if (varying_types[i] == "vec2")
+                {
+                    v.type = VaryingType::Vec2;
+                    v.size = sizeof(float) * 2;
+                }
+                else if (varying_types[i] == "vec3")
+                {
+                    v.type = VaryingType::Vec3;
+                    v.size = sizeof(float) * 3;
+                }
+                else if (varying_types[i] == "vec4")
+                {
+                    v.type = VaryingType::Vec4;
+                    v.size = sizeof(float) * 4;
+                }
+                else
+                {
+                    assert(!"not implement varying type");
+                }
+                String func_name = "get_" + varying_names[i];
+                v.getter = (VarGetter) GetProcAddress(dll, func_name.CString());
+                m_private->m_vs_varyings.Add(v);
+            }
+
+            m_private->m_fs_varyings.Clear();
+            varying_names = m_private->m_shaders[1]->GetVaryingNames();
+            varying_types = m_private->m_shaders[1]->GetVaryingTypes();
+            for (int i = 0; i < varying_names.Size(); ++i)
+            {
+                Varying v(varying_names[i]);
+                if (varying_types[i] == "vec2")
+                {
+                    v.type = VaryingType::Vec2;
+                    v.size = sizeof(float) * 2;
+                }
+                else if (varying_types[i] == "vec3")
+                {
+                    v.type = VaryingType::Vec3;
+                    v.size = sizeof(float) * 3;
+                }
+                else if (varying_types[i] == "vec4")
+                {
+                    v.type = VaryingType::Vec4;
+                    v.size = sizeof(float) * 4;
+                }
+                else
+                {
+                    assert(!"not implement varying type");
+                }
+                String func_name = "set_" + varying_names[i];
+                v.setter = (VarSetter) GetProcAddress(dll, func_name.CString());
+                m_private->m_fs_varyings.Add(v);
+            }
+        }
+    }
+
+    void GLProgram::SetVertexAttrib(GLuint index, const void* data, int size) const
+    {
+        for (const auto& i : m_private->m_attribs)
+        {
+            if (i.location == index)
+            {
+                i.setter((void*) data, size);
+                break;
+            }
+        }
+    }
+
+    void* GLProgram::CallVSMain() const
+    {
+        m_private->m_vs_main();
+        return m_private->m_get_gl_Position();
+    }
+
+    Vector<GLProgram::Varying> GLProgram::GetVaryings() const
+    {
+        Vector<GLProgram::Varying> varyings;
+
+        for (const auto& i : m_private->m_vs_varyings)
+        {
+            GLProgram::Varying v(i.name);
+            v.size = i.size;
+            v.type = i.type;
+            Memory::Copy(v.value, i.getter(), v.size);
+
+            varyings.Add(v);
+        }
+
+        return varyings;
+    }
+
+    void* GLProgram::CallFSMain() const
+    {
+        m_private->m_fs_main();
+        return m_private->m_get_gl_FragColor();
     }
 }

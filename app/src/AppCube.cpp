@@ -231,7 +231,7 @@ void main()\n\
 
         glUseProgram(m_program);
 
-        //glDrawArrays
+        glDrawArrays(GL_TRIANGLES, 0, 3);
         //glDrawElements
 
         glDisableVertexAttribArray(loc_a_position);
