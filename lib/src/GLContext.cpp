@@ -809,6 +809,19 @@ namespace sgl
                 return;
             }
 
+            unsigned char* color_buffer = m_default_color_buffer;
+            float* depth_buffer = m_default_depth_buffer;
+            unsigned char* stencil_buffer = m_default_stencil_buffer;
+            int buffer_width = m_default_buffer_width;
+            int buffer_height = m_default_buffer_height;
+
+            if (!m_current_fb.expired())
+            {
+                color_buffer = (unsigned char*) this->GetFramebufferAttachmentBuffer(GLFramebuffer::Attachment::Color0, buffer_width, buffer_height);
+                depth_buffer = (float*) this->GetFramebufferAttachmentBuffer(GLFramebuffer::Attachment::Depth, buffer_width, buffer_height);
+                stencil_buffer = (unsigned char*) this->GetFramebufferAttachmentBuffer(GLFramebuffer::Attachment::Stencil, buffer_width, buffer_height);
+            }
+
             Ref<GLProgram> program = m_using_program.lock();
 
             for (int i = 0; i < count; ++i) // triangle
@@ -860,10 +873,20 @@ namespace sgl
                     }
 
                     positions[j] = *(Vector4*) program->CallVSMain();
-                    varyings[j] = program->GetVaryings();
+                    varyings[j] = program->GetVSVaryings();
                 }
 
-                GLRasterizer rasterizer(positions, varyings);
+                auto set_pixel = [=](const Vector2i& p, const Viry3D::Vector4& c) {
+                    if (p.x >= 0 && p.x <= buffer_width - 1 &&
+                        p.y >= 0 && p.y <= buffer_height - 1)
+                    {
+                        color_buffer[p.y * buffer_width * 4 + p.x * 4 + 0] = FloatToColorByte(c.x);
+                        color_buffer[p.y * buffer_width * 4 + p.x * 4 + 1] = FloatToColorByte(c.y);
+                        color_buffer[p.y * buffer_width * 4 + p.x * 4 + 2] = FloatToColorByte(c.z);
+                        color_buffer[p.y * buffer_width * 4 + p.x * 4 + 3] = FloatToColorByte(c.w);
+                    }
+                };
+                GLRasterizer rasterizer(positions, varyings, program.get(), set_pixel, m_viewport_x, m_viewport_y, m_viewport_width, m_viewport_height);
                 rasterizer.Run();
             }
         }

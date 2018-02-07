@@ -21,6 +21,7 @@
 #include "memory/Ref.h"
 #include "container/Vector.h"
 #include "string/String.h"
+#include "math/Vector4.h"
 
 namespace sgl
 {
@@ -48,7 +49,7 @@ namespace sgl
             Viry3D::String name;
             VaryingType type;
             int size;
-            float value[4];
+            Viry3D::Vector4 value;
             VarGetter getter;
             VarSetter setter;
             
@@ -75,7 +76,8 @@ namespace sgl
         void Use();
         void SetVertexAttrib(GLuint index, const void* data, int size) const;
         void* CallVSMain() const;
-        Viry3D::Vector<Varying> GetVaryings() const;
+        Viry3D::Vector<Varying> GetVSVaryings() const;
+        void SetFSVarying(const Viry3D::String& name, void* data, int size) const;
         void* CallFSMain() const;
 
     private:

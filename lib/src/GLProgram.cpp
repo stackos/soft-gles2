@@ -266,8 +266,8 @@ namespace sgl
             return;
         }
 
-        //const String vs_path = "C:\\Program Files (x86)\\Microsoft Visual Studio\\2017\\Community";
-        const String vs_path = "D:\\Program\\VS2017";
+        const String vs_path = "C:\\Program Files (x86)\\Microsoft Visual Studio\\2017\\Community";
+        //const String vs_path = "D:\\Program\\VS2017";
         const bool isX64 = sizeof(void*) == 8;
         const String host = "Hostx64"; // "Hostx86"
         String cl_dir;
@@ -449,7 +449,7 @@ namespace sgl
         return m_private->m_get_gl_Position();
     }
 
-    Vector<GLProgram::Varying> GLProgram::GetVaryings() const
+    Vector<GLProgram::Varying> GLProgram::GetVSVaryings() const
     {
         Vector<GLProgram::Varying> varyings;
 
@@ -458,12 +458,24 @@ namespace sgl
             GLProgram::Varying v(i.name);
             v.size = i.size;
             v.type = i.type;
-            Memory::Copy(v.value, i.getter(), v.size);
+            Memory::Copy(&v.value, i.getter(), v.size);
 
             varyings.Add(v);
         }
 
         return varyings;
+    }
+
+    void GLProgram::SetFSVarying(const Viry3D::String& name, void* data, int size) const
+    {
+        for (const auto& i : m_private->m_fs_varyings)
+        {
+            if (i.name == name)
+            {
+                i.setter(data, size);
+                break;
+            }
+        }
     }
 
     void* GLProgram::CallFSMain() const
