@@ -136,30 +136,34 @@ namespace sgl
             1.0f / m_positions[2].w,
         };
 
-        for (int i = min_x; i <= max_x; ++i)
+        for (int x = min_x; x <= max_x; ++x)
         {
-            Vector2i p(i, y);
-            int w1 = EdgeEquation(p, p0, p1);
-            int w2 = EdgeEquation(p, p1, p2);
-            int w3 = EdgeEquation(p, p2, p0);
-
-            if (w1 >= 0 && w2 >= 0 && w3 >= 0)
+            if (x >= m_viewport_x && x < m_viewport_x + m_viewport_width)
             {
-                float a01 = fabs(Vector2i::Cross(p1 - p, p0 - p) / 2.0f) * one_div_area;
-                float a12 = fabs(Vector2i::Cross(p2 - p, p1 - p) / 2.0f) * one_div_area;
-                float a20 = 1.0f - a01 - a12;
+                Vector2i p(x, y);
+                int w1 = EdgeEquation(p, p0, p1);
+                int w2 = EdgeEquation(p, p1, p2);
+                int w3 = EdgeEquation(p, p2, p0);
 
-                float w = 1.0f / (a01 * one_div_ws[2] + a12 * one_div_ws[0] + a20 * one_div_ws[1]);
-
-                int varying_count = m_varyings[0].Size();
-                for (int j = 0; j < varying_count; ++j)
+                if (w1 >= 0 && w2 >= 0 && w3 >= 0)
                 {
-                    Vector4 varying = (m_varyings[2][j].value * a01 * one_div_ws[2] + m_varyings[0][j].value * a12 * one_div_ws[0] + m_varyings[1][j].value * a20 * one_div_ws[1]) * w;
-                    m_program->SetFSVarying(m_varyings[0][j].name, &varying, m_varyings[0][j].size);
-                }
+                    float a01 = fabs(Vector2i::Cross(p1 - p, p0 - p) / 2.0f) * one_div_area;
+                    float a12 = fabs(Vector2i::Cross(p2 - p, p1 - p) / 2.0f) * one_div_area;
+                    float a20 = 1.0f - a01 - a12;
 
-                Vector4 c = *(Vector4*) m_program->CallFSMain();
-                m_set_pixel(p, c);
+                    float w = 1.0f / (a01 * one_div_ws[2] + a12 * one_div_ws[0] + a20 * one_div_ws[1]);
+
+                    int varying_count = m_varyings[0].Size();
+                    for (int j = 0; j < varying_count; ++j)
+                    {
+                        Vector4 varying = (m_varyings[2][j].value * a01 * one_div_ws[2] + m_varyings[0][j].value * a12 * one_div_ws[0] + m_varyings[1][j].value * a20 * one_div_ws[1]) * w;
+                        m_program->SetFSVarying(m_varyings[0][j].name, &varying, m_varyings[0][j].size);
+                    }
+
+                    Vector4 c = *(Vector4*) m_program->CallFSMain();
+
+                    m_set_pixel(p, c);
+                }
             }
         }
     }
@@ -205,7 +209,10 @@ namespace sgl
                 }
             }
 
-            DrawScanLine(y, min_x, max_x, p0, p1, p2);
+            if (y >= m_viewport_y && y < m_viewport_y + m_viewport_height)
+            {
+                DrawScanLine(y, min_x, max_x, p0, p1, p2);
+            }
 
             y--;
         }

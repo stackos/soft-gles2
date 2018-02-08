@@ -795,20 +795,86 @@ namespace sgl
             switch (mode)
             {
                 case GL_TRIANGLES:
-                    this->DrawTriangles(first, count / 3);
+                    this->DrawArraysTriangles(first, count / 3);
                     break;
                 default:
                     break;
             }
         }
 
-        void DrawTriangles(GLint first, GLsizei count)
+        void DrawElements(GLenum mode, GLsizei count, GLenum type, const void* indices)
         {
-            if (m_using_program.expired())
+            switch (mode)
             {
-                return;
+                case GL_TRIANGLES:
+                    this->DrawElementsTriangles(count / 3, type, indices);
+                    break;
+                default:
+                    break;
             }
+        }
 
+        void ApplyVertexAttribs(const Ref<GLProgram>& program, unsigned int index)
+        {
+            for (int k = 0; k < m_vertex_attrib_arrays.Size(); ++k) // attrib
+            {
+                const VertexAttribArray& va = m_vertex_attrib_arrays[k];
+                if (va.enable)
+                {
+                    int size = 0;
+                    switch (va.type)
+                    {
+                        case GL_BYTE:
+                        case GL_UNSIGNED_BYTE:
+                            size = va.size * 1;
+                            break;
+                        case GL_SHORT:
+                        case GL_UNSIGNED_SHORT:
+                        case GL_FIXED:
+                            size = va.size * 2;
+                            break;
+                        case GL_FLOAT:
+                            size = va.size * 4;
+                            break;
+                        default:
+                            break;
+                    }
+
+                    if (!m_current_vb.expired())
+                    {
+                        Ref<GLBuffer> vb = m_current_vb.lock();
+                        char* p = (char*) vb->GetData();
+                        int offset = (int) (size_t) va.pointer;
+                        program->SetVertexAttrib(va.index, &p[index * va.stride + offset], size);
+                    }
+                    else
+                    {
+                        char* p = (char*) va.pointer;
+                        program->SetVertexAttrib(va.index, &p[index * va.stride], size);
+                    }
+                }
+            }
+        }
+
+        void Rasterize(unsigned char* color_buffer, int buffer_width, int buffer_height, const Ref<GLProgram>& program,
+            const Vector4* positions, const Vector<GLProgram::Varying>* varyings)
+        {
+            auto set_pixel = [=](const Vector2i& p, const Viry3D::Vector4& c) {
+                if (p.x >= 0 && p.x <= buffer_width - 1 &&
+                    p.y >= 0 && p.y <= buffer_height - 1)
+                {
+                    color_buffer[p.y * buffer_width * 4 + p.x * 4 + 0] = this->FloatToColorByte(c.x);
+                    color_buffer[p.y * buffer_width * 4 + p.x * 4 + 1] = this->FloatToColorByte(c.y);
+                    color_buffer[p.y * buffer_width * 4 + p.x * 4 + 2] = this->FloatToColorByte(c.z);
+                    color_buffer[p.y * buffer_width * 4 + p.x * 4 + 3] = this->FloatToColorByte(c.w);
+                }
+            };
+            GLRasterizer rasterizer(positions, varyings, program.get(), set_pixel, m_viewport_x, m_viewport_y, m_viewport_width, m_viewport_height);
+            rasterizer.Run();
+        }
+
+        void DrawArraysTriangles(GLint first, GLsizei count)
+        {
             unsigned char* color_buffer = m_default_color_buffer;
             float* depth_buffer = m_default_depth_buffer;
             unsigned char* stencil_buffer = m_default_stencil_buffer;
@@ -831,63 +897,98 @@ namespace sgl
 
                 for (int j = 0; j < 3; ++j) // vertex
                 {
-                    int index = first + count * i + j;
+                    unsigned int index = first + i * 3 + j;
 
-                    for (int k = 0; k < m_vertex_attrib_arrays.Size(); ++k) // attrib
-                    {
-                        const VertexAttribArray& va = m_vertex_attrib_arrays[k];
-                        if (va.enable)
-                        {
-                            int size = 0;
-                            switch (va.type)
-                            {
-                                case GL_BYTE:
-                                case GL_UNSIGNED_BYTE:
-                                    size = va.size * 1;
-                                    break;
-                                case GL_SHORT:
-                                case GL_UNSIGNED_SHORT:
-                                case GL_FIXED:
-                                    size = va.size * 2;
-                                    break;
-                                case GL_FLOAT:
-                                    size = va.size * 4;
-                                    break;
-                                default:
-                                    break;
-                            }
-
-                            if (!m_current_vb.expired())
-                            {
-                                Ref<GLBuffer> vb = m_current_vb.lock();
-                                char* p = (char*) vb->GetData();
-                                int offset = (int) (size_t) va.pointer;
-                                program->SetVertexAttrib(va.index, &p[index * va.stride + offset], size);
-                            }
-                            else
-                            {
-                                char* p = (char*) va.pointer;
-                                program->SetVertexAttrib(va.index, &p[index * va.stride], size);
-                            }
-                        }
-                    }
+                    this->ApplyVertexAttribs(program, index);
 
                     positions[j] = *(Vector4*) program->CallVSMain();
                     varyings[j] = program->GetVSVaryings();
                 }
 
-                auto set_pixel = [=](const Vector2i& p, const Viry3D::Vector4& c) {
-                    if (p.x >= 0 && p.x <= buffer_width - 1 &&
-                        p.y >= 0 && p.y <= buffer_height - 1)
+                this->Rasterize(color_buffer, buffer_width, buffer_height, program,
+                    positions, varyings);
+            }
+        }
+
+        void DrawElementsTriangles(GLsizei count, GLenum type, const void* indices)
+        {
+            unsigned char* color_buffer = m_default_color_buffer;
+            float* depth_buffer = m_default_depth_buffer;
+            unsigned char* stencil_buffer = m_default_stencil_buffer;
+            int buffer_width = m_default_buffer_width;
+            int buffer_height = m_default_buffer_height;
+
+            if (!m_current_fb.expired())
+            {
+                color_buffer = (unsigned char*) this->GetFramebufferAttachmentBuffer(GLFramebuffer::Attachment::Color0, buffer_width, buffer_height);
+                depth_buffer = (float*) this->GetFramebufferAttachmentBuffer(GLFramebuffer::Attachment::Depth, buffer_width, buffer_height);
+                stencil_buffer = (unsigned char*) this->GetFramebufferAttachmentBuffer(GLFramebuffer::Attachment::Stencil, buffer_width, buffer_height);
+            }
+
+            Ref<GLProgram> program = m_using_program.lock();
+
+            int index_type_size = 0;
+            switch (type)
+            {
+                case GL_UNSIGNED_BYTE:
+                    index_type_size = 1;
+                    break;
+                case GL_UNSIGNED_SHORT:
+                    index_type_size = 2;
+                    break;
+                case GL_UNSIGNED_INT:
+                    index_type_size = 4;
+                    break;
+                default:
+                    break;
+            }
+
+            for (int i = 0; i < count; ++i) // triangle
+            {
+                Vector4 positions[3];
+                Vector<GLProgram::Varying> varyings[3];
+
+                for (int j = 0; j < 3; ++j) // vertex
+                {
+                    unsigned int index = 0;
+                    char* index_addr = nullptr;
+
+                    if (!m_current_ib.expired())
                     {
-                        color_buffer[p.y * buffer_width * 4 + p.x * 4 + 0] = FloatToColorByte(c.x);
-                        color_buffer[p.y * buffer_width * 4 + p.x * 4 + 1] = FloatToColorByte(c.y);
-                        color_buffer[p.y * buffer_width * 4 + p.x * 4 + 2] = FloatToColorByte(c.z);
-                        color_buffer[p.y * buffer_width * 4 + p.x * 4 + 3] = FloatToColorByte(c.w);
+                        Ref<GLBuffer> ib = m_current_ib.lock();
+                        char* p = (char*) ib->GetData();
+                        int offset = (int) (size_t) indices;
+                        index_addr = (char*) &p[offset + (i * 3 + j) * index_type_size];
                     }
-                };
-                GLRasterizer rasterizer(positions, varyings, program.get(), set_pixel, m_viewport_x, m_viewport_y, m_viewport_width, m_viewport_height);
-                rasterizer.Run();
+                    else
+                    {
+                        char* p = (char*) indices;
+                        index_addr = (char*) &p[(i * 3 + j) * index_type_size];
+                    }
+
+                    switch (type)
+                    {
+                        case GL_UNSIGNED_BYTE:
+                            index = *(unsigned char*) index_addr;
+                            break;
+                        case GL_UNSIGNED_SHORT:
+                            index = *(unsigned short*) index_addr;
+                            break;
+                        case GL_UNSIGNED_INT:
+                            index = *(unsigned int*) index_addr;
+                            break;
+                        default:
+                            break;
+                    }
+
+                    this->ApplyVertexAttribs(program, index);
+
+                    positions[j] = *(Vector4*) program->CallVSMain();
+                    varyings[j] = program->GetVSVaryings();
+                }
+
+                this->Rasterize(color_buffer, buffer_width, buffer_height, program,
+                    positions, varyings);
             }
         }
 
@@ -1083,3 +1184,4 @@ IMPLEMENT_VOID_GL_FUNC_6(VertexAttribPointer, GLuint, GLint, GLenum, GLboolean, 
 IMPLEMENT_VOID_GL_FUNC_1(EnableVertexAttribArray, GLuint)
 IMPLEMENT_VOID_GL_FUNC_1(DisableVertexAttribArray, GLuint)
 IMPLEMENT_VOID_GL_FUNC_3(DrawArrays, GLenum, GLint, GLsizei)
+IMPLEMENT_VOID_GL_FUNC_4(DrawElements, GLenum, GLsizei, GLenum, const void*)

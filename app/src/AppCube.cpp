@@ -131,10 +131,11 @@ void main()\n\
         glGenBuffers(1, &m_vb);
         glBindBuffer(GL_ARRAY_BUFFER, m_vb);
 
-        Vertex vertices[3] = {
+        Vertex vertices[] = {
             { Vector3(-0.5f, 0.5f, 0), Vector2(0, 0), Color(1, 0, 0, 1) },
             { Vector3(-0.5f, -0.5f, 0), Vector2(0, 1), Color(0, 1, 0, 1) },
             { Vector3(0.5f, -0.5f, 0), Vector2(1, 1), Color(0, 0, 1, 1) },
+            { Vector3(0.5f, 0.5f, 0), Vector2(1, 0), Color(1, 0, 1, 1) },
         };
         glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), &vertices[0], GL_STATIC_DRAW);
 
@@ -142,7 +143,7 @@ void main()\n\
         glGenBuffers(1, &m_ib);
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_ib);
 
-        unsigned short indices[6] = { 0, 1, 2, 0, 2, 3 };
+        unsigned short indices[] = { 0, 1, 2, 0, 2, 3 };
         glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), &indices[0], GL_STATIC_DRAW);
 
         // for test api
@@ -184,16 +185,16 @@ void main()\n\
         //glIsTexture
         //glBindTexture
         //glActiveTexture
-        //glCopyTexImage2D
-        //glCopyTexSubImage2D
-        //glGetTexParameterfv
-        //glGetTexParameteriv
         //glTexImage2D
+        //glTexSubImage2D
         //glTexParameterf
         //glTexParameterfv
         //glTexParameteri
         //glTexParameteriv
-        //glTexSubImage2D
+        //glGetTexParameterfv
+        //glGetTexParameteriv
+        //glCopyTexImage2D
+        //glCopyTexSubImage2D
         //glCompressedTexImage2D
         //glCompressedTexSubImage2D
 
@@ -222,8 +223,6 @@ void main()\n\
         int loc_a_position = glGetAttribLocation(m_program, "a_position");
         int loc_a_color = glGetAttribLocation(m_program, "a_color");
 
-        glBindBuffer(GL_ARRAY_BUFFER, m_vb);
-
         glVertexAttribPointer(loc_a_position, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (const void*) 0);
         glVertexAttribPointer(loc_a_color, 4, GL_FLOAT, GL_FALSE, sizeof(Vertex), (const void*) (sizeof(Vector3) + sizeof(Vector2)));
         glEnableVertexAttribArray(loc_a_position);
@@ -231,8 +230,9 @@ void main()\n\
 
         glUseProgram(m_program);
 
-        glDrawArrays(GL_TRIANGLES, 0, 3);
-        //glDrawElements
+        glBindBuffer(GL_ARRAY_BUFFER, m_vb);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_ib);
+        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_SHORT, (const void*) 0);
 
         glDisableVertexAttribArray(loc_a_position);
         glDisableVertexAttribArray(loc_a_color);

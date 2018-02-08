@@ -76,17 +76,16 @@ namespace sgl
 
         ~GLProgramPrivate()
         {
-            String dll_name = this->GetTempDllName();
-
-            File::Delete(dll_name + ".dll");
-            File::Delete(dll_name + ".exp");
-            File::Delete(dll_name + ".lib");
-
             if (m_dll)
             {
                 FreeLibrary(m_dll);
                 m_dll = nullptr;
             }
+
+            String dll_name = this->GetTempDllName();
+            File::Delete(dll_name + ".dll");
+            File::Delete(dll_name + ".exp");
+            File::Delete(dll_name + ".lib");
         }
 
         String GetTempDllName()
@@ -266,8 +265,9 @@ namespace sgl
             return;
         }
 
-        const String vs_path = "C:\\Program Files (x86)\\Microsoft Visual Studio\\2017\\Community";
-        //const String vs_path = "D:\\Program\\VS2017";
+        //const String vs_path = "C:\\Program Files (x86)\\Microsoft Visual Studio\\2017\\Community";
+        const String vs_path = "D:\\Program\\VS2017";
+
         const bool isX64 = sizeof(void*) == 8;
         const String host = "Hostx64"; // "Hostx86"
         String cl_dir;
