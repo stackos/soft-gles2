@@ -47,7 +47,7 @@ namespace sgl
         }
     };
 
-    typedef std::function<void(const Vector2i& p, const Viry3D::Vector4& c)> SetPixelFunc;
+    typedef std::function<void(const Vector2i& p, const Viry3D::Vector4& c, float depth)> SetFragmentFunc;
 
     class GLRasterizer
     {
@@ -56,7 +56,7 @@ namespace sgl
             const Viry3D::Vector4* positions,
             const Viry3D::Vector<GLProgram::Varying>* varyings,
             GLProgram* program,
-            SetPixelFunc set_pixel,
+            SetFragmentFunc set_fragment,
             int viewport_x,
             int viewport_y,
             int viewport_width,
@@ -64,7 +64,7 @@ namespace sgl
             m_positions(positions),
             m_varyings(varyings),
             m_program(program),
-            m_set_pixel(set_pixel),
+            m_set_fragment(set_fragment),
             m_viewport_x(viewport_x),
             m_viewport_y(viewport_y),
             m_viewport_width(viewport_width),
@@ -85,7 +85,7 @@ namespace sgl
         const Viry3D::Vector4* m_positions;
         const Viry3D::Vector<GLProgram::Varying>* m_varyings;
         GLProgram* m_program;
-        SetPixelFunc m_set_pixel;
+        SetFragmentFunc m_set_fragment;
         int m_viewport_x;
         int m_viewport_y;
         int m_viewport_width;

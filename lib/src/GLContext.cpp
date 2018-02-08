@@ -874,7 +874,7 @@ namespace sgl
             }
         }
 
-        void Rasterize(unsigned char* color_buffer, int buffer_width, int buffer_height, const Ref<GLProgram>& program,
+        void Rasterize(unsigned char* color_buffer, float* depth_buffer, int buffer_width, int buffer_height, const Ref<GLProgram>& program,
             const Vector4* positions, const Vector<GLProgram::Varying>* varyings)
         {
             float cross = (positions[1].x - positions[0].x) * (positions[2].y - positions[1].y)
@@ -882,17 +882,24 @@ namespace sgl
 
             if (cross > 0)
             {
-                auto set_pixel = [=](const Vector2i& p, const Viry3D::Vector4& c) {
+                auto set_fragment = [=](const Vector2i& p, const Viry3D::Vector4& c, float depth) {
                     if (p.x >= 0 && p.x <= buffer_width - 1 &&
                         p.y >= 0 && p.y <= buffer_height - 1)
                     {
-                        color_buffer[p.y * buffer_width * 4 + p.x * 4 + 0] = this->FloatToColorByte(c.x);
-                        color_buffer[p.y * buffer_width * 4 + p.x * 4 + 1] = this->FloatToColorByte(c.y);
-                        color_buffer[p.y * buffer_width * 4 + p.x * 4 + 2] = this->FloatToColorByte(c.z);
-                        color_buffer[p.y * buffer_width * 4 + p.x * 4 + 3] = this->FloatToColorByte(c.w);
+                        float old_depth = depth_buffer[p.y * buffer_width + p.x];
+                        if (depth <= old_depth)
+                        {
+                            color_buffer[p.y * buffer_width * 4 + p.x * 4 + 0] = this->FloatToColorByte(c.x);
+                            color_buffer[p.y * buffer_width * 4 + p.x * 4 + 1] = this->FloatToColorByte(c.y);
+                            color_buffer[p.y * buffer_width * 4 + p.x * 4 + 2] = this->FloatToColorByte(c.z);
+                            color_buffer[p.y * buffer_width * 4 + p.x * 4 + 3] = this->FloatToColorByte(c.w);
+
+                            depth_buffer[p.y * buffer_width + p.x] = depth;
+                        }
                     }
                 };
-                GLRasterizer rasterizer(positions, varyings, program.get(), set_pixel, m_viewport_x, m_viewport_y, m_viewport_width, m_viewport_height);
+
+                GLRasterizer rasterizer(positions, varyings, program.get(), set_fragment, m_viewport_x, m_viewport_y, m_viewport_width, m_viewport_height);
                 rasterizer.Run();
             }
         }
@@ -929,7 +936,7 @@ namespace sgl
                     varyings[j] = program->GetVSVaryings();
                 }
 
-                this->Rasterize(color_buffer, buffer_width, buffer_height, program,
+                this->Rasterize(color_buffer, depth_buffer, buffer_width, buffer_height, program,
                     positions, varyings);
             }
         }
@@ -1011,7 +1018,7 @@ namespace sgl
                     varyings[j] = program->GetVSVaryings();
                 }
 
-                this->Rasterize(color_buffer, buffer_width, buffer_height, program,
+                this->Rasterize(color_buffer, depth_buffer, buffer_width, buffer_height, program,
                     positions, varyings);
             }
         }

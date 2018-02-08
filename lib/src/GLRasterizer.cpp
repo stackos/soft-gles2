@@ -135,16 +135,16 @@ namespace sgl
             1.0f / m_positions[1].w,
             1.0f / m_positions[2].w,
         };
+        float depths[3] = {
+            m_positions[0].z * one_div_ws[0],
+            m_positions[1].z * one_div_ws[1],
+            m_positions[2].z * one_div_ws[2],
+        };
 
         for (int x = min_x; x <= max_x; ++x)
         {
             if (x >= m_viewport_x && x < m_viewport_x + m_viewport_width)
             {
-                if (x == 721 && y == 271)
-                {
-                    x = x;
-                }
-
                 Vector2i p(x, y);
                 int w1 = EdgeEquation(p, p0, p1);
                 int w2 = EdgeEquation(p, p1, p2);
@@ -165,14 +165,10 @@ namespace sgl
                         m_program->SetFSVarying(m_varyings[0][j].name, &varying, m_varyings[0][j].size);
                     }
 
-                    Vector4 c = *(Vector4*) m_program->CallFSMain();
+                    Vector4 color = *(Vector4*) m_program->CallFSMain();
+                    float depth = depths[2] * a01 + depths[0] * a12 + depths[1] * a20;
 
-                    if (x == max_x)
-                    {
-                        c = Vector4(1, 0, 0, 1);
-                    }
-
-                    m_set_pixel(p, c);
+                    m_set_fragment(p, color, depth);
                 }
             }
         }
@@ -298,7 +294,14 @@ namespace sgl
                     }
                 }
 
-                sd.x = ?
+                if (sb.x <= min_x)
+                {
+                    sd.x = max_x;
+                }
+                else
+                {
+                    sd.x = min_x;
+                }
                 sd.y = sb.y;
             }
 

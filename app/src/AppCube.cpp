@@ -197,7 +197,7 @@ void main()\n\
         // set to default frame buffer
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-        m_deg = 4;
+        m_deg = 0;
     }
 
     virtual ~Renderer()
@@ -243,12 +243,12 @@ void main()\n\
 
         glBindBuffer(GL_ARRAY_BUFFER, m_vb);
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_ib);
-        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_SHORT, (const void*) 0);
+        glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_SHORT, (const void*) 0);
 
         glDisableVertexAttribArray(loc_a_position);
         glDisableVertexAttribArray(loc_a_color);
 
-        //m_deg += 1;
+        m_deg += 1;
     }
 
     GLuint m_fb;
