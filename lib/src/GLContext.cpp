@@ -621,6 +621,24 @@ namespace sgl
                 m_using_program.reset();
             }
         }
+
+        void Uniform4fv(GLint location, GLsizei count, const GLfloat* value)
+        {
+            if (!m_using_program.expired())
+            {
+                Ref<GLProgram> program = m_using_program.lock();
+                program->Uniformv(location, count * sizeof(Vector4), value);
+            }
+        }
+
+        void UniformMatrix4fv(GLint location, GLsizei count, GLboolean transpose, const GLfloat* value)
+        {
+            if (!m_using_program.expired())
+            {
+                Ref<GLProgram> program = m_using_program.lock();
+                program->UniformMatrix4fv(location, count, transpose, value);
+            }
+        }
         
         void GenBuffers(GLsizei n, GLuint* buffers)
         {
@@ -859,18 +877,24 @@ namespace sgl
         void Rasterize(unsigned char* color_buffer, int buffer_width, int buffer_height, const Ref<GLProgram>& program,
             const Vector4* positions, const Vector<GLProgram::Varying>* varyings)
         {
-            auto set_pixel = [=](const Vector2i& p, const Viry3D::Vector4& c) {
-                if (p.x >= 0 && p.x <= buffer_width - 1 &&
-                    p.y >= 0 && p.y <= buffer_height - 1)
-                {
-                    color_buffer[p.y * buffer_width * 4 + p.x * 4 + 0] = this->FloatToColorByte(c.x);
-                    color_buffer[p.y * buffer_width * 4 + p.x * 4 + 1] = this->FloatToColorByte(c.y);
-                    color_buffer[p.y * buffer_width * 4 + p.x * 4 + 2] = this->FloatToColorByte(c.z);
-                    color_buffer[p.y * buffer_width * 4 + p.x * 4 + 3] = this->FloatToColorByte(c.w);
-                }
-            };
-            GLRasterizer rasterizer(positions, varyings, program.get(), set_pixel, m_viewport_x, m_viewport_y, m_viewport_width, m_viewport_height);
-            rasterizer.Run();
+            float cross = (positions[1].x - positions[0].x) * (positions[2].y - positions[1].y)
+                - (positions[2].x - positions[1].x) * (positions[1].y - positions[0].y);
+
+            if (cross > 0)
+            {
+                auto set_pixel = [=](const Vector2i& p, const Viry3D::Vector4& c) {
+                    if (p.x >= 0 && p.x <= buffer_width - 1 &&
+                        p.y >= 0 && p.y <= buffer_height - 1)
+                    {
+                        color_buffer[p.y * buffer_width * 4 + p.x * 4 + 0] = this->FloatToColorByte(c.x);
+                        color_buffer[p.y * buffer_width * 4 + p.x * 4 + 1] = this->FloatToColorByte(c.y);
+                        color_buffer[p.y * buffer_width * 4 + p.x * 4 + 2] = this->FloatToColorByte(c.z);
+                        color_buffer[p.y * buffer_width * 4 + p.x * 4 + 3] = this->FloatToColorByte(c.w);
+                    }
+                };
+                GLRasterizer rasterizer(positions, varyings, program.get(), set_pixel, m_viewport_x, m_viewport_y, m_viewport_width, m_viewport_height);
+                rasterizer.Run();
+            }
         }
 
         void DrawArraysTriangles(GLint first, GLsizei count)
@@ -1170,6 +1194,8 @@ IMPLEMENT_VOID_GL_FUNC_1(LinkProgram, GLuint)
 IMPLEMENT_GL_FUNC_2(GLint, GetAttribLocation, GLuint, const GLchar*)
 IMPLEMENT_GL_FUNC_2(GLint, GetUniformLocation, GLuint, const GLchar*)
 IMPLEMENT_VOID_GL_FUNC_1(UseProgram, GLuint)
+IMPLEMENT_VOID_GL_FUNC_3(Uniform4fv, GLint, GLsizei, const GLfloat*)
+IMPLEMENT_VOID_GL_FUNC_4(UniformMatrix4fv, GLint, GLsizei, GLboolean, const GLfloat*)
 
 // Buffer
 IMPLEMENT_VOID_GL_FUNC_2(GenBuffers, GLsizei, GLuint*)

@@ -25,6 +25,7 @@
 #include "math/Vector2.h"
 #include "math/Vector3.h"
 #include "math/Vector4.h"
+#include "math/Matrix4x4.h"
 #include "memory/Memory.h"
 #include "Debug.h"
 #include <Windows.h>
@@ -431,6 +432,42 @@ namespace sgl
         }
     }
 
+    void GLProgram::Uniformv(GLint location, int size, const void* value) const
+    {
+        for (const auto& i : m_private->m_uniforms)
+        {
+            if (i.location == location)
+            {
+                i.setter((void*) value, size);
+                break;
+            }
+        }
+    }
+
+    void GLProgram::UniformMatrix4fv(GLint location, GLsizei count, GLboolean transpose, const GLfloat* value) const
+    {
+        for (const auto& i : m_private->m_uniforms)
+        {
+            if (i.location == location)
+            {
+                Matrix4x4* p = (Matrix4x4*) value;
+                Vector<Matrix4x4> mats;
+                for (int i = 0; i < count; ++i)
+                {
+                    Matrix4x4 m = p[i];
+                    if (transpose == GL_TRUE)
+                    {
+                        m = m.Transpose();
+                    }
+
+                    mats.Add(m);
+                }
+                i.setter((void*) mats.Bytes(), mats.SizeInBytes());
+                break;
+            }
+        }
+    }
+
     void GLProgram::SetVertexAttrib(GLuint index, const void* data, int size) const
     {
         for (const auto& i : m_private->m_attribs)
@@ -466,13 +503,13 @@ namespace sgl
         return varyings;
     }
 
-    void GLProgram::SetFSVarying(const Viry3D::String& name, void* data, int size) const
+    void GLProgram::SetFSVarying(const Viry3D::String& name, const void* data, int size) const
     {
         for (const auto& i : m_private->m_fs_varyings)
         {
             if (i.name == name)
             {
-                i.setter(data, size);
+                i.setter((void*) data, size);
                 break;
             }
         }

@@ -140,6 +140,11 @@ namespace sgl
         {
             if (x >= m_viewport_x && x < m_viewport_x + m_viewport_width)
             {
+                if (x == 721 && y == 271)
+                {
+                    x = x;
+                }
+
                 Vector2i p(x, y);
                 int w1 = EdgeEquation(p, p0, p1);
                 int w2 = EdgeEquation(p, p1, p2);
@@ -162,6 +167,11 @@ namespace sgl
 
                     Vector4 c = *(Vector4*) m_program->CallFSMain();
 
+                    if (x == max_x)
+                    {
+                        c = Vector4(1, 0, 0, 1);
+                    }
+
                     m_set_pixel(p, c);
                 }
             }
@@ -170,14 +180,19 @@ namespace sgl
 
     void GLRasterizer::DrawHalfTriangle(
         const Vector<Vector2i>& e1, const Vector<Vector2i>& e2,
-        int y_top, int y_bottom,
+        int y_top, int y_bottom, bool include_bottom,
         const Vector2i& p0, const Vector2i& p1, const Vector2i& p2)
     {
         int i1 = 0;
         int i2 = 0;
         int y = y_top;
-        while (y != y_bottom)
+        while (y >= y_bottom)
         {
+            if (y == y_bottom && include_bottom == false)
+            {
+                break;
+            }
+
             int min_x = 0x7fffffff;
             int max_x = -1;
 
@@ -260,10 +275,6 @@ namespace sgl
         //
         //        pa
 
-        Vector2 pd;
-        pd.x = pc.x - (pc.y - pb.y) * (pc.x - pa.x) / (pc.y - pa.y);
-        pd.y = pb.y;
-
         {
             Vector2i sa, sb, sc, sd;
             sa.x = (int) ProjToScreenX(pa.x);
@@ -272,17 +283,33 @@ namespace sgl
             sb.y = (int) ProjToScreenY(pb.y);
             sc.x = (int) ProjToScreenX(pc.x);
             sc.y = (int) ProjToScreenY(pc.y);
-            sd.x = (int) ProjToScreenX(pd.x);
-            sd.y = (int) ProjToScreenY(pd.y);
+
+            // find pd
+            {
+                Vector<Vector2i> e = TriangleEdge(sc, sa);
+                int min_x = 0x7fffffff;
+                int max_x = -1;
+                for (int i = 0; i < e.Size(); ++i)
+                {
+                    if (e[i].y == sb.y)
+                    {
+                        min_x = Mathf::Min(min_x, e[i].x);
+                        max_x = Mathf::Max(max_x, e[i].x);
+                    }
+                }
+
+                sd.x = ?
+                sd.y = sb.y;
+            }
 
             Vector<Vector2i> e1 = TriangleEdge(sc, sd);
             Vector<Vector2i> e2 = TriangleEdge(sc, sb);
 
-            DrawHalfTriangle(e1, e2, sc.y, sd.y, p0, p1, p2);
+            DrawHalfTriangle(e1, e2, sc.y, sd.y, false, p0, p1, p2);
 
             e1 = TriangleEdge(sd, sa);
             e2 = TriangleEdge(sb, sa);
-            DrawHalfTriangle(e1, e2, sd.y, sa.y, p0, p1, p2);
+            DrawHalfTriangle(e1, e2, sd.y, sa.y, true, p0, p1, p2);
         }
     }
 }

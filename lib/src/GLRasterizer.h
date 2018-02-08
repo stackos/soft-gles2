@@ -78,7 +78,7 @@ namespace sgl
         float ProjToScreenY(float y);
         void DrawHalfTriangle(
             const Viry3D::Vector<Vector2i>& e1, const Viry3D::Vector<Vector2i>& e2,
-            int y_top, int y_bottom,
+            int y_top, int y_bottom, bool include_bottom,
             const Vector2i& p0, const Vector2i& p1, const Vector2i& p2);
         void DrawScanLine(int y, int min_x, int max_x, const Vector2i& p0, const Vector2i& p1, const Vector2i& p2);
 

@@ -74,10 +74,12 @@ namespace sgl
         GLint GetAttribLocation(const GLchar* name) const;
         GLint GetUniformLocation(const GLchar* name) const;
         void Use();
+        void Uniformv(GLint location, int size, const void* value) const;
+        void UniformMatrix4fv(GLint location, GLsizei count, GLboolean transpose, const GLfloat* value) const;
         void SetVertexAttrib(GLuint index, const void* data, int size) const;
         void* CallVSMain() const;
         Viry3D::Vector<Varying> GetVSVaryings() const;
-        void SetFSVarying(const Viry3D::String& name, void* data, int size) const;
+        void SetFSVarying(const Viry3D::String& name, const void* data, int size) const;
         void* CallFSMain() const;
 
     private:

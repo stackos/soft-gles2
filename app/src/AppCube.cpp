@@ -26,31 +26,11 @@
 
 using namespace Viry3D;
 
-struct Color
-{
-    float r;
-    float g;
-    float b;
-    float a;
-
-    Color(float r = 1, float g = 1, float b = 1, float a = 1): r(r), g(g), b(b), a(a) { }
-
-    Color operator +(const Color& right) const
-    {
-        return Color(r + right.r, g + right.g, b + right.b, a + right.a);
-    }
-
-    Color operator *(float right) const
-    {
-        return Color(r * right, g * right, b * right, a * right);
-    }
-};
-
 struct Vertex
 {
     Vector3 pos;
     Vector2 uv;
-    Color color;
+    Vector4 color;
 };
 
 class Renderer
@@ -95,12 +75,13 @@ public:
         // shader
         GLuint vs = glCreateShader(GL_VERTEX_SHADER);
         const char* vs_src = "\
+uniform mat4 u_mvp;\n\
 attribute vec4 a_position;\n\
 attribute vec4 a_color;\n\
 varying vec4 v_color;\n\
 void main()\n\
 {\n\
-    gl_Position = a_position;\n\
+    gl_Position = u_mvp * a_position;\n\
     v_color = a_color;\n\
 }";
         glShaderSource(vs, 1, (const GLchar* const*) &vs_src, nullptr);
@@ -109,10 +90,11 @@ void main()\n\
         GLuint fs = glCreateShader(GL_FRAGMENT_SHADER);
         const char* ps_src = "\
 precision highp float;\n\
+uniform vec4 u_color;\n\
 varying vec4 v_color;\n\
 void main()\n\
 {\n\
-    gl_FragColor = v_color;\n\
+    gl_FragColor = v_color * u_color;\n\
 }";
         glShaderSource(fs, 1, (const GLchar* const*) &ps_src, nullptr);
         glCompileShader(fs);
@@ -132,10 +114,14 @@ void main()\n\
         glBindBuffer(GL_ARRAY_BUFFER, m_vb);
 
         Vertex vertices[] = {
-            { Vector3(-0.5f, 0.5f, 0), Vector2(0, 0), Color(1, 0, 0, 1) },
-            { Vector3(-0.5f, -0.5f, 0), Vector2(0, 1), Color(0, 1, 0, 1) },
-            { Vector3(0.5f, -0.5f, 0), Vector2(1, 1), Color(0, 0, 1, 1) },
-            { Vector3(0.5f, 0.5f, 0), Vector2(1, 0), Color(1, 0, 1, 1) },
+            { Vector3(-0.5f, 0.5f, -0.5f), Vector2(0, 0), Vector4(0, 0, 0, 1) },
+            { Vector3(-0.5f, -0.5f, -0.5f), Vector2(0, 1), Vector4(1, 0, 0, 1) },
+            { Vector3(0.5f, -0.5f, -0.5f), Vector2(1, 1), Vector4(0, 1, 0, 1) },
+            { Vector3(0.5f, 0.5f, -0.5f), Vector2(1, 0), Vector4(0, 0, 1, 1) },
+            { Vector3(-0.5f, 0.5f, 0.5f), Vector2(0, 0), Vector4(0, 1, 1, 1) },
+            { Vector3(-0.5f, -0.5f, 0.5f), Vector2(0, 1), Vector4(1, 0, 1, 1) },
+            { Vector3(0.5f, -0.5f, 0.5f), Vector2(1, 1), Vector4(1, 1, 0, 1) },
+            { Vector3(0.5f, 0.5f, 0.5f), Vector2(1, 0), Vector4(1, 1, 1, 1) },
         };
         glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), &vertices[0], GL_STATIC_DRAW);
 
@@ -143,7 +129,14 @@ void main()\n\
         glGenBuffers(1, &m_ib);
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_ib);
 
-        unsigned short indices[] = { 0, 1, 2, 0, 2, 3 };
+        unsigned short indices[] = {
+            0, 1, 2, 0, 2, 3,
+            3, 2, 6, 3, 6, 7,
+            7, 6, 5, 7, 5, 4,
+            4, 5, 1, 4, 1, 0,
+            4, 0, 3, 4, 3, 7,
+            1, 5, 6, 1, 6, 2,
+        };
         glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), &indices[0], GL_STATIC_DRAW);
 
         // for test api
@@ -203,6 +196,8 @@ void main()\n\
 
         // set to default frame buffer
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+        m_deg = 4;
     }
 
     virtual ~Renderer()
@@ -220,6 +215,24 @@ void main()\n\
     {
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
+        glUseProgram(m_program);
+
+        Matrix4x4 model = Matrix4x4::Rotation(Quaternion::Euler(0, m_deg, 0));
+        Matrix4x4 view = Matrix4x4::LookTo(
+            Vector3(0, 0, -4),
+            Vector3(0, 0, 1),
+            Vector3(0, 1, 0));
+        Matrix4x4 proj = Matrix4x4::Perspective(60, 1280 / 720.0f, 0.3f, 1000);
+        Matrix4x4 mvp = proj * view * model;
+
+        Vector4 u_color(1, 1, 1, 1);
+
+        int loc_u_mvp = glGetUniformLocation(m_program, "u_mvp");
+        int loc_u_color = glGetUniformLocation(m_program, "u_color");
+
+        glUniformMatrix4fv(loc_u_mvp, 1, true, (const GLfloat*) &mvp);
+        glUniform4fv(loc_u_color, 1, (const GLfloat*) &u_color);
+
         int loc_a_position = glGetAttribLocation(m_program, "a_position");
         int loc_a_color = glGetAttribLocation(m_program, "a_color");
 
@@ -228,14 +241,14 @@ void main()\n\
         glEnableVertexAttribArray(loc_a_position);
         glEnableVertexAttribArray(loc_a_color);
 
-        glUseProgram(m_program);
-
         glBindBuffer(GL_ARRAY_BUFFER, m_vb);
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_ib);
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_SHORT, (const void*) 0);
 
         glDisableVertexAttribArray(loc_a_position);
         glDisableVertexAttribArray(loc_a_color);
+
+        //m_deg += 1;
     }
 
     GLuint m_fb;
@@ -245,6 +258,7 @@ void main()\n\
     GLuint m_program;
     GLuint m_vb;
     GLuint m_ib;
+    float m_deg;
 };
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShowCmd)
