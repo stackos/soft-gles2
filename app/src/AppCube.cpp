@@ -48,7 +48,9 @@ public:
         glDepthRangef(0, 1);
         glDepthFunc(GL_LEQUAL);
 
-        glEnable(GL_CULL_FACE); //glCullFace glFrontFace
+        glEnable(GL_CULL_FACE);
+        glCullFace(GL_BACK);
+        glFrontFace(GL_CCW);
 
         glDisable(GL_BLEND); //glBlendFunc
 

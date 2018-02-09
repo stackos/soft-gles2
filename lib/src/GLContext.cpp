@@ -37,8 +37,8 @@
 
 using namespace Viry3D;
 
-//const char* g_vs_path = "C:\\Program Files (x86)\\Microsoft Visual Studio\\2017\\Community";
-const char* g_vs_path = "D:\\Program\\VS2017";
+const char* g_vs_path = "C:\\Program Files (x86)\\Microsoft Visual Studio\\2017\\Community";
+//const char* g_vs_path = "D:\\Program\\VS2017";
 
 namespace sgl
 {
@@ -894,7 +894,7 @@ namespace sgl
             float cross = (positions[1].x - positions[0].x) * (positions[2].y - positions[1].y)
                 - (positions[2].x - positions[1].x) * (positions[1].y - positions[0].y);
 
-            if (cross > 0)
+            if (m_cull_face_enable == false || this->CullFaceTest(cross))
             {
                 auto set_fragment = [=](const Vector2i& p, const Viry3D::Vector4& c, float depth) {
                     if (p.x >= 0 && p.x <= buffer_width - 1 &&
@@ -918,7 +918,7 @@ namespace sgl
                     }
                 };
 
-                GLRasterizer rasterizer(positions, varyings, program.get(), set_fragment, m_viewport_x, m_viewport_y, m_viewport_width, m_viewport_height);
+                GLRasterizer rasterizer(positions, varyings, program.get(), set_fragment, m_viewport_x, m_viewport_y, m_viewport_width, m_viewport_height, cross > 0);
                 rasterizer.Run();
             }
         }
@@ -1091,6 +1091,16 @@ namespace sgl
             m_depth_func = func;
         }
 
+        void CullFace(GLenum mode)
+        {
+            m_cull_face = mode;
+        }
+
+        void FrontFace(GLenum mode)
+        {
+            m_front_face = mode;
+        }
+
         bool DepthTest(float src, float dest)
         {
             switch (m_depth_func)
@@ -1116,6 +1126,35 @@ namespace sgl
             }
         }
 
+        bool CullFaceTest(float cross)
+        {
+            switch (m_cull_face)
+            {
+                case GL_BACK:
+                    switch (m_front_face)
+                    {
+                        case GL_CCW:
+                            return cross > 0;
+                        case GL_CW:
+                            return cross < 0;
+                    }
+                    break;
+                case GL_FRONT:
+                    switch (m_front_face)
+                    {
+                        case GL_CCW:
+                            return cross < 0;
+                        case GL_CW:
+                            return cross > 0;
+                    }
+                    break;
+                case GL_FRONT_AND_BACK:
+                    return false;
+            }
+
+            return false;
+        }
+
         GLContext():
             m_default_color_buffer(nullptr),
             m_default_depth_buffer(nullptr),
@@ -1137,7 +1176,9 @@ namespace sgl
             m_depth_mask(true),
             m_depth_range(0, 1),
             m_depth_func(GL_LESS),
-            m_cull_face_enable(false)
+            m_cull_face_enable(false),
+            m_cull_face(GL_BACK),
+            m_front_face(GL_CCW)
         {
         }
 
@@ -1181,6 +1222,8 @@ namespace sgl
         Vector2 m_depth_range;
         GLenum m_depth_func;
         bool m_cull_face_enable;
+        GLenum m_cull_face;
+        GLenum m_front_face;
     };
 }
 
@@ -1328,3 +1371,5 @@ IMPLEMENT_VOID_GL_FUNC_1(Disable, GLenum)
 IMPLEMENT_VOID_GL_FUNC_1(DepthMask, GLboolean)
 IMPLEMENT_VOID_GL_FUNC_2(DepthRangef, GLfloat, GLfloat)
 IMPLEMENT_VOID_GL_FUNC_1(DepthFunc, GLenum)
+IMPLEMENT_VOID_GL_FUNC_1(CullFace, GLenum)
+IMPLEMENT_VOID_GL_FUNC_1(FrontFace, GLenum)

@@ -110,9 +110,14 @@ namespace sgl
         return ((p1.y > p0.y) || (p0.y == p1.y && p0.x > p1.x));
     }
 
-    static int EdgeEquation(const Vector2i& p, const Vector2i& p0, const Vector2i& p1)
+    static int EdgeEquation(const Vector2i& p, const Vector2i& p0, const Vector2i& p1, bool ccw)
     {
-        return (p1.x - p0.x) * (p.y - p0.y) - (p1.y - p0.y) * (p.x - p0.x) + IsTopLeftEdge(p0, p1) ? 0 : -1;
+        int q = (p1.x - p0.x) * (p.y - p0.y) - (p1.y - p0.y) * (p.x - p0.x);
+        if (ccw == false)
+        {
+            q = -q;
+        }
+        return q + (IsTopLeftEdge(p0, p1) ? 0 : -1);
     }
 
     float GLRasterizer::ProjToScreenX(float x)
@@ -146,9 +151,9 @@ namespace sgl
             if (x >= m_viewport_x && x < m_viewport_x + m_viewport_width)
             {
                 Vector2i p(x, y);
-                int w1 = EdgeEquation(p, p0, p1);
-                int w2 = EdgeEquation(p, p1, p2);
-                int w3 = EdgeEquation(p, p2, p0);
+                int w1 = EdgeEquation(p, p0, p1, m_ccw);
+                int w2 = EdgeEquation(p, p1, p2, m_ccw);
+                int w3 = EdgeEquation(p, p2, p0, m_ccw);
 
                 if (w1 >= 0 && w2 >= 0 && w3 >= 0)
                 {

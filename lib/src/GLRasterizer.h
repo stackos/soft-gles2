@@ -60,7 +60,8 @@ namespace sgl
             int viewport_x,
             int viewport_y,
             int viewport_width,
-            int viewport_height):
+            int viewport_height,
+            bool ccw):
             m_positions(positions),
             m_varyings(varyings),
             m_program(program),
@@ -68,7 +69,8 @@ namespace sgl
             m_viewport_x(viewport_x),
             m_viewport_y(viewport_y),
             m_viewport_width(viewport_width),
-            m_viewport_height(viewport_height)
+            m_viewport_height(viewport_height),
+            m_ccw(ccw)
         {
         }
         void Run();
@@ -90,6 +92,7 @@ namespace sgl
         int m_viewport_y;
         int m_viewport_width;
         int m_viewport_height;
+        bool m_ccw;
     };
 }
  
