@@ -23,6 +23,8 @@
 
 using namespace Viry3D;
 
+extern const char* g_vs_path;
+
 namespace sgl
 {
     class GLShaderPrivate
@@ -211,20 +213,17 @@ namespace sgl
 
     void GLShader::Compile()
     {
-        const String vs_path = "C:\\Program Files (x86)\\Microsoft Visual Studio\\2017\\Community";
-        //const String vs_path = "D:\\Program\\VS2017";
-
         const bool isX64 = sizeof(void*) == 8;
         const String host = "Hostx64"; // "Hostx86"
         String cl_dir;
 
         if (isX64)
         {
-            cl_dir = vs_path + "\\VC\\Tools\\MSVC\\14.12.25827\\bin\\" + host + "\\x64";
+            cl_dir = String(g_vs_path) + "\\VC\\Tools\\MSVC\\14.12.25827\\bin\\" + host + "\\x64";
         }
         else
         {
-            cl_dir = vs_path + "\\VC\\Tools\\MSVC\\14.12.25827\\bin\\" + host + "\\x86";
+            cl_dir = String(g_vs_path) + "\\VC\\Tools\\MSVC\\14.12.25827\\bin\\" + host + "\\x86";
         }
 
         String temp_src_name;
@@ -232,7 +231,7 @@ namespace sgl
         String temp_out_name = temp_src_name + ".out.txt";
 
         exec_cmd(cl_dir, "cl.exe", "/c " + temp_src_name + ".cpp "
-            "/I \"" + vs_path + "\\VC\\Tools\\MSVC\\14.12.25827\\include\" "
+            "/I \"" + g_vs_path + "\\VC\\Tools\\MSVC\\14.12.25827\\include\" "
             "/I \"C:\\Program Files (x86)\\Windows Kits\\10\\Include\\10.0.16299.0\\ucrt\"",
             temp_out_name);
 

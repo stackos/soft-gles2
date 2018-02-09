@@ -32,6 +32,8 @@
 
 using namespace Viry3D;
 
+extern const char* g_vs_path;
+
 namespace sgl
 {
     class GLProgramPrivate
@@ -266,20 +268,17 @@ namespace sgl
             return;
         }
 
-        const String vs_path = "C:\\Program Files (x86)\\Microsoft Visual Studio\\2017\\Community";
-        //const String vs_path = "D:\\Program\\VS2017";
-
         const bool isX64 = sizeof(void*) == 8;
         const String host = "Hostx64"; // "Hostx86"
         String cl_dir;
 
         if (isX64)
         {
-            cl_dir = vs_path + "\\VC\\Tools\\MSVC\\14.12.25827\\bin\\" + host + "\\x64";
+            cl_dir = String(g_vs_path) + "\\VC\\Tools\\MSVC\\14.12.25827\\bin\\" + host + "\\x64";
         }
         else
         {
-            cl_dir = vs_path + "\\VC\\Tools\\MSVC\\14.12.25827\\bin\\" + host + "\\x86";
+            cl_dir = String(g_vs_path) + "\\VC\\Tools\\MSVC\\14.12.25827\\bin\\" + host + "\\x86";
         }
 
         String temp_vs_obj_name = "temp.vs.obj";
@@ -299,7 +298,7 @@ namespace sgl
         File::WriteAllBytes(temp_fs_obj_name, fs_bin);
 
         exec_cmd(cl_dir, "link.exe", "/dll " + temp_vs_obj_name + " " + temp_fs_obj_name + " /OUT:" + dll_name + ".dll "
-            "/LIBPATH:\"" + vs_path + "\\VC\\Tools\\MSVC\\14.12.25827\\lib\\x64\" "
+            "/LIBPATH:\"" + g_vs_path + "\\VC\\Tools\\MSVC\\14.12.25827\\lib\\x64\" "
             "/LIBPATH:\"C:\\Program Files (x86)\\Windows Kits\\10\\lib\\10.0.16299.0\\um\\x64\" "
             "/LIBPATH:\"C:\\Program Files (x86)\\Windows Kits\\10\\lib\\10.0.16299.0\\ucrt\\x64\"",
             temp_out_name);

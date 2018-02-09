@@ -22,6 +22,8 @@
 #include "Debug.h"
 #include "math/Mathf.h"
 #include "container/Map.h"
+#include "math/Vector2.h"
+#include "math/Vector3.h"
 #include "math/Vector4.h"
 #include "GLObject.h"
 #include "GLFramebuffer.h"
@@ -34,6 +36,9 @@
 #include <functional>
 
 using namespace Viry3D;
+
+//const char* g_vs_path = "C:\\Program Files (x86)\\Microsoft Visual Studio\\2017\\Community";
+const char* g_vs_path = "D:\\Program\\VS2017";
 
 namespace sgl
 {
@@ -429,41 +434,50 @@ namespace sgl
 
             if (mask & GL_COLOR_BUFFER_BIT)
             {
-                unsigned char r = FloatToColorByte(m_clear_color_red);
-                unsigned char g = FloatToColorByte(m_clear_color_green);
-                unsigned char b = FloatToColorByte(m_clear_color_blue);
-                unsigned char a = FloatToColorByte(m_clear_color_alpha);
-
-                for (int i = y; i < y + height && i < buffer_height; ++i)
+                if (color_buffer)
                 {
-                    for (int j = x; j < x + width && j < buffer_width; ++j)
+                    unsigned char r = FloatToColorByte(m_clear_color_red);
+                    unsigned char g = FloatToColorByte(m_clear_color_green);
+                    unsigned char b = FloatToColorByte(m_clear_color_blue);
+                    unsigned char a = FloatToColorByte(m_clear_color_alpha);
+
+                    for (int i = y; i < y + height && i < buffer_height; ++i)
                     {
-                        color_buffer[i * buffer_width * 4 + j * 4 + 0] = r;
-                        color_buffer[i * buffer_width * 4 + j * 4 + 1] = g;
-                        color_buffer[i * buffer_width * 4 + j * 4 + 2] = b;
-                        color_buffer[i * buffer_width * 4 + j * 4 + 3] = a;
+                        for (int j = x; j < x + width && j < buffer_width; ++j)
+                        {
+                            color_buffer[i * buffer_width * 4 + j * 4 + 0] = r;
+                            color_buffer[i * buffer_width * 4 + j * 4 + 1] = g;
+                            color_buffer[i * buffer_width * 4 + j * 4 + 2] = b;
+                            color_buffer[i * buffer_width * 4 + j * 4 + 3] = a;
+                        }
                     }
                 }
             }
 
             if (mask & GL_DEPTH_BUFFER_BIT)
             {
-                for (int i = y; i < y + height && i < buffer_height; ++i)
+                if (m_depth_mask && depth_buffer)
                 {
-                    for (int j = x; j < x + width && j < buffer_width; ++j)
+                    for (int i = y; i < y + height && i < buffer_height; ++i)
                     {
-                        depth_buffer[i * buffer_width + j] = m_clear_depth;
+                        for (int j = x; j < x + width && j < buffer_width; ++j)
+                        {
+                            depth_buffer[i * buffer_width + j] = m_clear_depth;
+                        }
                     }
                 }
             }
 
             if (mask & GL_STENCIL_BUFFER_BIT)
             {
-                for (int i = y; i < y + height && i < buffer_height; ++i)
+                if (stencil_buffer)
                 {
-                    for (int j = x; j < x + width && j < buffer_width; ++j)
+                    for (int i = y; i < y + height && i < buffer_height; ++i)
                     {
-                        stencil_buffer[i * buffer_width + j] = (unsigned char) m_clear_stencil;
+                        for (int j = x; j < x + width && j < buffer_width; ++j)
+                        {
+                            stencil_buffer[i * buffer_width + j] = (unsigned char) m_clear_stencil;
+                        }
                     }
                 }
             }
@@ -887,14 +901,19 @@ namespace sgl
                         p.y >= 0 && p.y <= buffer_height - 1)
                     {
                         float old_depth = depth_buffer[p.y * buffer_width + p.x];
-                        if (depth <= old_depth)
+                        float mapped_depth = m_depth_range.x + (depth + 1) / 2 * (m_depth_range.y - m_depth_range.x);
+
+                        if (m_depth_test_enable == false || DepthTest(mapped_depth, old_depth))
                         {
                             color_buffer[p.y * buffer_width * 4 + p.x * 4 + 0] = this->FloatToColorByte(c.x);
                             color_buffer[p.y * buffer_width * 4 + p.x * 4 + 1] = this->FloatToColorByte(c.y);
                             color_buffer[p.y * buffer_width * 4 + p.x * 4 + 2] = this->FloatToColorByte(c.z);
                             color_buffer[p.y * buffer_width * 4 + p.x * 4 + 3] = this->FloatToColorByte(c.w);
 
-                            depth_buffer[p.y * buffer_width + p.x] = depth;
+                            if (m_depth_mask)
+                            {
+                                depth_buffer[p.y * buffer_width + p.x] = mapped_depth;
+                            }
                         }
                     }
                 };
@@ -1023,6 +1042,80 @@ namespace sgl
             }
         }
 
+        void Enable(GLenum cap)
+        {
+            switch (cap)
+            {
+                case GL_DEPTH_TEST:
+                    m_depth_test_enable = true;
+                    break;
+                case GL_CULL_FACE:
+                    m_cull_face_enable = true;
+                    break;
+                case GL_BLEND:
+                    break;
+                default:
+                    break;
+            }
+        }
+
+        void Disable(GLenum cap)
+        {
+            switch (cap)
+            {
+                case GL_DEPTH_TEST:
+                    m_depth_test_enable = false;
+                    break;
+                case GL_CULL_FACE:
+                    m_cull_face_enable = false;
+                    break;
+                case GL_BLEND:
+                    break;
+                default:
+                    break;
+            }
+        }
+
+        void DepthMask(GLboolean flag)
+        {
+            m_depth_mask = flag == GL_TRUE;
+        }
+
+        void DepthRangef(GLfloat n, GLfloat f)
+        {
+            m_depth_range = Vector2(n, f);
+        }
+
+        void DepthFunc(GLenum func)
+        {
+            m_depth_func = func;
+        }
+
+        bool DepthTest(float src, float dest)
+        {
+            switch (m_depth_func)
+            {
+                case GL_NEVER:
+                    return false;
+                case GL_LESS:
+                    return src < dest;
+                case GL_EQUAL:
+                    return Mathf::FloatEqual(src, dest);
+                case GL_LEQUAL:
+                    return src <= dest;
+                case GL_GREATER:
+                    return src > dest;
+                case GL_NOTEQUAL:
+                    return !Mathf::FloatEqual(src, dest);
+                case GL_GEQUAL:
+                    return src >= dest;
+                case GL_ALWAYS:
+                    return true;
+                default:
+                    return false;
+            }
+        }
+
         GLContext():
             m_default_color_buffer(nullptr),
             m_default_depth_buffer(nullptr),
@@ -1039,7 +1132,12 @@ namespace sgl
             m_clear_color_blue(0.0f),
             m_clear_color_alpha(1.0f),
             m_clear_depth(1.0f),
-            m_clear_stencil(0)
+            m_clear_stencil(0),
+            m_depth_test_enable(false),
+            m_depth_mask(true),
+            m_depth_range(0, 1),
+            m_depth_func(GL_LESS),
+            m_cull_face_enable(false)
         {
         }
 
@@ -1078,6 +1176,11 @@ namespace sgl
         float m_clear_depth;
         int m_clear_stencil;
         Vector<VertexAttribArray> m_vertex_attrib_arrays;
+        bool m_depth_test_enable;
+        bool m_depth_mask;
+        Vector2 m_depth_range;
+        GLenum m_depth_func;
+        bool m_cull_face_enable;
     };
 }
 
@@ -1218,3 +1321,10 @@ IMPLEMENT_VOID_GL_FUNC_1(EnableVertexAttribArray, GLuint)
 IMPLEMENT_VOID_GL_FUNC_1(DisableVertexAttribArray, GLuint)
 IMPLEMENT_VOID_GL_FUNC_3(DrawArrays, GLenum, GLint, GLsizei)
 IMPLEMENT_VOID_GL_FUNC_4(DrawElements, GLenum, GLsizei, GLenum, const void*)
+
+// State
+IMPLEMENT_VOID_GL_FUNC_1(Enable, GLenum)
+IMPLEMENT_VOID_GL_FUNC_1(Disable, GLenum)
+IMPLEMENT_VOID_GL_FUNC_1(DepthMask, GLboolean)
+IMPLEMENT_VOID_GL_FUNC_2(DepthRangef, GLfloat, GLfloat)
+IMPLEMENT_VOID_GL_FUNC_1(DepthFunc, GLenum)

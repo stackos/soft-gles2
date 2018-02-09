@@ -43,6 +43,15 @@ public:
         glClearDepthf(1);
         glClearStencil(0);
 
+        glEnable(GL_DEPTH_TEST);
+        glDepthMask(GL_TRUE);
+        glDepthRangef(0, 1);
+        glDepthFunc(GL_LEQUAL);
+
+        glEnable(GL_CULL_FACE); //glCullFace glFrontFace
+
+        glDisable(GL_BLEND); //glBlendFunc
+
         // color rb
         glGenRenderbuffers(1, &m_rb_color);
         glBindRenderbuffer(GL_RENDERBUFFER, m_rb_color);
