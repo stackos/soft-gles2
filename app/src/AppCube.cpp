@@ -228,36 +228,42 @@ void main()\n\
 
         glUseProgram(m_program);
 
-        Matrix4x4 model = Matrix4x4::Rotation(Quaternion::Euler(0, m_deg, 0));
+        Matrix4x4 models[2];
+        models[0] = Matrix4x4::Rotation(Quaternion::Euler(0, m_deg, 0));
+        models[1] = Matrix4x4::Translation(Vector3(0.5f, -0.5f, -1.5f));
         Matrix4x4 view = Matrix4x4::LookTo(
             Vector3(0, 0, -4),
             Vector3(0, 0, 1),
             Vector3(0, 1, 0));
         Matrix4x4 proj = Matrix4x4::Perspective(60, 1280 / 720.0f, 0.3f, 1000);
-        Matrix4x4 mvp = proj * view * model;
-
+        
         Vector4 u_color(1, 1, 1, 1);
 
-        int loc_u_mvp = glGetUniformLocation(m_program, "u_mvp");
-        int loc_u_color = glGetUniformLocation(m_program, "u_color");
+        for (int i = 0; i < 2; ++i)
+        {
+            Matrix4x4 mvp = proj * view * models[i];
 
-        glUniformMatrix4fv(loc_u_mvp, 1, true, (const GLfloat*) &mvp);
-        glUniform4fv(loc_u_color, 1, (const GLfloat*) &u_color);
+            int loc_u_mvp = glGetUniformLocation(m_program, "u_mvp");
+            int loc_u_color = glGetUniformLocation(m_program, "u_color");
 
-        int loc_a_position = glGetAttribLocation(m_program, "a_position");
-        int loc_a_color = glGetAttribLocation(m_program, "a_color");
+            glUniformMatrix4fv(loc_u_mvp, 1, true, (const GLfloat*) &mvp);
+            glUniform4fv(loc_u_color, 1, (const GLfloat*) &u_color);
 
-        glVertexAttribPointer(loc_a_position, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (const void*) 0);
-        glVertexAttribPointer(loc_a_color, 4, GL_FLOAT, GL_FALSE, sizeof(Vertex), (const void*) (sizeof(Vector3) + sizeof(Vector2)));
-        glEnableVertexAttribArray(loc_a_position);
-        glEnableVertexAttribArray(loc_a_color);
+            int loc_a_position = glGetAttribLocation(m_program, "a_position");
+            int loc_a_color = glGetAttribLocation(m_program, "a_color");
 
-        glBindBuffer(GL_ARRAY_BUFFER, m_vb);
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_ib);
-        glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_SHORT, (const void*) 0);
+            glVertexAttribPointer(loc_a_position, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (const void*) 0);
+            glVertexAttribPointer(loc_a_color, 4, GL_FLOAT, GL_FALSE, sizeof(Vertex), (const void*) (sizeof(Vector3) + sizeof(Vector2)));
+            glEnableVertexAttribArray(loc_a_position);
+            glEnableVertexAttribArray(loc_a_color);
 
-        glDisableVertexAttribArray(loc_a_position);
-        glDisableVertexAttribArray(loc_a_color);
+            glBindBuffer(GL_ARRAY_BUFFER, m_vb);
+            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_ib);
+            glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_SHORT, (const void*) 0);
+
+            glDisableVertexAttribArray(loc_a_position);
+            glDisableVertexAttribArray(loc_a_color);
+        }
 
         m_deg += 1;
     }
