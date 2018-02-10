@@ -37,8 +37,8 @@
 
 using namespace Viry3D;
 
-const char* g_vs_path = "C:\\Program Files (x86)\\Microsoft Visual Studio\\2017\\Community";
-//const char* g_vs_path = "D:\\Program\\VS2017";
+//const char* g_vs_path = "C:\\Program Files (x86)\\Microsoft Visual Studio\\2017\\Community";
+const char* g_vs_path = "D:\\Program\\VS2017";
 
 namespace sgl
 {
@@ -396,10 +396,7 @@ namespace sgl
 
         void ClearColor(GLfloat red, GLfloat green, GLfloat blue, GLfloat alpha)
         {
-            m_clear_color_red = red;
-            m_clear_color_green = green;
-            m_clear_color_blue = blue;
-            m_clear_color_alpha = alpha;
+            m_clear_color = Vector4(red, green, blue, alpha);
         }
 
         void ClearDepthf(GLfloat d)
@@ -436,10 +433,10 @@ namespace sgl
             {
                 if (color_buffer)
                 {
-                    unsigned char r = FloatToColorByte(m_clear_color_red);
-                    unsigned char g = FloatToColorByte(m_clear_color_green);
-                    unsigned char b = FloatToColorByte(m_clear_color_blue);
-                    unsigned char a = FloatToColorByte(m_clear_color_alpha);
+                    unsigned char r = FloatToColorByte(m_clear_color.x);
+                    unsigned char g = FloatToColorByte(m_clear_color.y);
+                    unsigned char b = FloatToColorByte(m_clear_color.z);
+                    unsigned char a = FloatToColorByte(m_clear_color.w);
 
                     for (int i = y; i < y + height && i < buffer_height; ++i)
                     {
@@ -888,6 +885,126 @@ namespace sgl
             }
         }
 
+        Vector3 BlendColorFactor(const Vector3& src_color, float src_alpha, const Vector3& dest_color, float dest_alpha, GLenum factor)
+        {
+            switch (factor)
+            {
+                case GL_ZERO:
+                    return Vector3(0, 0, 0);
+                case GL_ONE:
+                    return Vector3(1, 1, 1);
+                case GL_SRC_COLOR:
+                    return src_color;
+                case GL_ONE_MINUS_SRC_COLOR:
+                    return Vector3(1 - src_color.x, 1 - src_color.y, 1 - src_color.z);
+                case GL_DST_COLOR:
+                    return dest_color;
+                case GL_ONE_MINUS_DST_COLOR:
+                    return Vector3(1 - dest_color.x, 1 - dest_color.y, 1 - dest_color.z);
+                case GL_SRC_ALPHA:
+                    return Vector3(src_alpha, src_alpha, src_alpha);
+                case GL_ONE_MINUS_SRC_ALPHA:
+                    return Vector3(1 - src_alpha, 1 - src_alpha, 1 - src_alpha);
+                case GL_DST_ALPHA:
+                    return Vector3(dest_alpha, dest_alpha, dest_alpha);
+                case GL_ONE_MINUS_DST_ALPHA:
+                    return Vector3(1 - dest_alpha, 1 - dest_alpha, 1 - dest_alpha);
+                case GL_CONSTANT_COLOR:
+                    return Vector3(m_blend_color.x, m_blend_color.y, m_blend_color.z);
+                case GL_ONE_MINUS_CONSTANT_COLOR:
+                    return Vector3(1 - m_blend_color.x, 1 - m_blend_color.y, 1 - m_blend_color.z);
+                case GL_CONSTANT_ALPHA:
+                    return Vector3(m_blend_color.w, m_blend_color.w, m_blend_color.w);
+                case GL_ONE_MINUS_CONSTANT_ALPHA:
+                    return Vector3(1 - m_blend_color.w, 1 - m_blend_color.w, 1 - m_blend_color.w);
+                case GL_SRC_ALPHA_SATURATE:
+                {
+                    float i = Mathf::Min(src_alpha, 1 - dest_alpha);
+                    return Vector3(i, i, i);
+                }
+            }
+
+            return Vector3(0, 0, 0);
+        }
+
+        float BlendAlphaFactor(const Vector3& src_color, float src_alpha, const Vector3& dest_color, float dest_alpha, GLenum factor)
+        {
+            switch (factor)
+            {
+                case GL_ZERO:
+                    return 0;
+                case GL_ONE:
+                    return 1;
+                case GL_SRC_COLOR:
+                    return src_alpha;
+                case GL_ONE_MINUS_SRC_COLOR:
+                    return 1 - src_alpha;
+                case GL_DST_COLOR:
+                    return dest_alpha;
+                case GL_ONE_MINUS_DST_COLOR:
+                    return 1 - dest_alpha;
+                case GL_SRC_ALPHA:
+                    return src_alpha;
+                case GL_ONE_MINUS_SRC_ALPHA:
+                    return 1 - src_alpha;
+                case GL_DST_ALPHA:
+                    return dest_alpha;
+                case GL_ONE_MINUS_DST_ALPHA:
+                    return 1 - dest_alpha;
+                case GL_CONSTANT_COLOR:
+                    return m_blend_color.w;
+                case GL_ONE_MINUS_CONSTANT_COLOR:
+                    return 1 - m_blend_color.w;
+                case GL_CONSTANT_ALPHA:
+                    return m_blend_color.w;
+                case GL_ONE_MINUS_CONSTANT_ALPHA:
+                    return 1 - m_blend_color.w;
+                case GL_SRC_ALPHA_SATURATE:
+                    return 1;
+            }
+
+            return 0;
+        }
+
+        Vector4 DoBlend(const Vector3& src_color, float src_alpha, const Vector3& dest_color, float dest_alpha)
+        {
+            Vector3 src_factor_c = BlendColorFactor(src_color, src_alpha, dest_color, dest_alpha, m_blend_src_factor_c);
+            float src_factor_a = BlendAlphaFactor(src_color, src_alpha, dest_color, dest_alpha, m_blend_src_factor_a);
+            Vector3 dest_factor_c = BlendColorFactor(src_color, src_alpha, dest_color, dest_alpha, m_blend_dest_factor_c);
+            float dest_factor_a = BlendAlphaFactor(src_color, src_alpha, dest_color, dest_alpha, m_blend_dest_factor_a);
+
+            Vector3 color = src_color;
+            float alpha = src_alpha;
+
+            switch (m_blend_equation_c)
+            {
+                case GL_FUNC_ADD:
+                    color = src_color * src_factor_c + dest_color * dest_factor_c;
+                    break;
+                case GL_FUNC_SUBTRACT:
+                    color = src_color * src_factor_c - dest_color * dest_factor_c;
+                    break;
+                case GL_FUNC_REVERSE_SUBTRACT:
+                    color = dest_color * dest_factor_c - src_color * src_factor_c;
+                    break;
+            }
+
+            switch (m_blend_equation_a)
+            {
+                case GL_FUNC_ADD:
+                    alpha = src_alpha * src_factor_a + dest_alpha * dest_factor_a;
+                    break;
+                case GL_FUNC_SUBTRACT:
+                    alpha = src_alpha * src_factor_a - dest_alpha * dest_factor_a;
+                    break;
+                case GL_FUNC_REVERSE_SUBTRACT:
+                    alpha = dest_alpha * dest_factor_a - src_alpha * src_factor_a;
+                    break;
+            }
+
+            return Vector4(color.x, color.y, color.z, alpha);
+        }
+
         void Rasterize(unsigned char* color_buffer, float* depth_buffer, int buffer_width, int buffer_height, const Ref<GLProgram>& program,
             const Vector4* positions, const Vector<GLProgram::Varying>* varyings)
         {
@@ -896,7 +1013,7 @@ namespace sgl
 
             if (m_cull_face_enable == false || this->CullFaceTest(cross))
             {
-                auto set_fragment = [=](const Vector2i& p, const Viry3D::Vector4& c, float depth) {
+                auto set_fragment = [=](const Vector2i& p, const Vector4& c, float depth) {
                     if (p.x >= 0 && p.x <= buffer_width - 1 &&
                         p.y >= 0 && p.y <= buffer_height - 1)
                     {
@@ -905,10 +1022,30 @@ namespace sgl
 
                         if (m_depth_test_enable == false || DepthTest(mapped_depth, old_depth))
                         {
-                            color_buffer[p.y * buffer_width * 4 + p.x * 4 + 0] = this->FloatToColorByte(c.x);
-                            color_buffer[p.y * buffer_width * 4 + p.x * 4 + 1] = this->FloatToColorByte(c.y);
-                            color_buffer[p.y * buffer_width * 4 + p.x * 4 + 2] = this->FloatToColorByte(c.z);
-                            color_buffer[p.y * buffer_width * 4 + p.x * 4 + 3] = this->FloatToColorByte(c.w);
+                            if (m_blend_enable)
+                            {
+                                Vector3 src_color(c.x, c.y, c.z);
+                                float src_alpha = c.w;
+                                Vector3 dest_color(
+                                    color_buffer[p.y * buffer_width * 4 + p.x * 4 + 0] / 255.0f,
+                                    color_buffer[p.y * buffer_width * 4 + p.x * 4 + 1] / 255.0f,
+                                    color_buffer[p.y * buffer_width * 4 + p.x * 4 + 2] / 255.0f);
+                                float dest_alpha = color_buffer[p.y * buffer_width * 4 + p.x * 4 + 3] / 255.0f;
+
+                                Vector4 color = this->DoBlend(src_color, src_alpha, dest_color, dest_alpha);
+
+                                color_buffer[p.y * buffer_width * 4 + p.x * 4 + 0] = this->FloatToColorByte(color.x);
+                                color_buffer[p.y * buffer_width * 4 + p.x * 4 + 1] = this->FloatToColorByte(color.y);
+                                color_buffer[p.y * buffer_width * 4 + p.x * 4 + 2] = this->FloatToColorByte(color.z);
+                                color_buffer[p.y * buffer_width * 4 + p.x * 4 + 3] = this->FloatToColorByte(color.w);
+                            }
+                            else
+                            {
+                                color_buffer[p.y * buffer_width * 4 + p.x * 4 + 0] = this->FloatToColorByte(c.x);
+                                color_buffer[p.y * buffer_width * 4 + p.x * 4 + 1] = this->FloatToColorByte(c.y);
+                                color_buffer[p.y * buffer_width * 4 + p.x * 4 + 2] = this->FloatToColorByte(c.z);
+                                color_buffer[p.y * buffer_width * 4 + p.x * 4 + 3] = this->FloatToColorByte(c.w);
+                            }
 
                             if (m_depth_mask)
                             {
@@ -1053,6 +1190,7 @@ namespace sgl
                     m_cull_face_enable = true;
                     break;
                 case GL_BLEND:
+                    m_blend_enable = true;
                     break;
                 default:
                     break;
@@ -1070,6 +1208,7 @@ namespace sgl
                     m_cull_face_enable = false;
                     break;
                 case GL_BLEND:
+                    m_blend_enable = false;
                     break;
                 default:
                     break;
@@ -1099,6 +1238,39 @@ namespace sgl
         void FrontFace(GLenum mode)
         {
             m_front_face = mode;
+        }
+
+        void BlendFunc(GLenum sfactor, GLenum dfactor)
+        {
+            m_blend_src_factor_c = sfactor;
+            m_blend_src_factor_a = sfactor;
+            m_blend_dest_factor_c = dfactor;
+            m_blend_dest_factor_a = dfactor;
+        }
+
+        void BlendFuncSeparate(GLenum sfactorRGB, GLenum dfactorRGB, GLenum sfactorAlpha, GLenum dfactorAlpha)
+        {
+            m_blend_src_factor_c = sfactorRGB;
+            m_blend_src_factor_a = sfactorAlpha;
+            m_blend_dest_factor_c = dfactorRGB;
+            m_blend_dest_factor_a = dfactorAlpha;
+        }
+
+        void BlendEquation(GLenum mode)
+        {
+            m_blend_equation_c = mode;
+            m_blend_equation_a = mode;
+        }
+
+        void BlendEquationSeparate(GLenum modeRGB, GLenum modeAlpha)
+        {
+            m_blend_equation_c = modeRGB;
+            m_blend_equation_a = modeAlpha;
+        }
+
+        void BlendColor(GLfloat red, GLfloat green, GLfloat blue, GLfloat alpha)
+        {
+            m_blend_color = Vector4(red, green, blue, alpha);
         }
 
         bool DepthTest(float src, float dest)
@@ -1166,10 +1338,7 @@ namespace sgl
             m_viewport_y(-1),
             m_viewport_width(-1),
             m_viewport_height(-1),
-            m_clear_color_red(0.0f),
-            m_clear_color_green(0.0f),
-            m_clear_color_blue(0.0f),
-            m_clear_color_alpha(1.0f),
+            m_clear_color(0, 0, 0, 1),
             m_clear_depth(1.0f),
             m_clear_stencil(0),
             m_depth_test_enable(false),
@@ -1178,7 +1347,15 @@ namespace sgl
             m_depth_func(GL_LESS),
             m_cull_face_enable(false),
             m_cull_face(GL_BACK),
-            m_front_face(GL_CCW)
+            m_front_face(GL_CCW),
+            m_blend_enable(false),
+            m_blend_src_factor_c(GL_ONE),
+            m_blend_src_factor_a(GL_ONE),
+            m_blend_dest_factor_c(GL_ZERO),
+            m_blend_dest_factor_a(GL_ZERO),
+            m_blend_equation_c(GL_FUNC_ADD),
+            m_blend_equation_a(GL_FUNC_ADD),
+            m_blend_color(0, 0, 0, 0)
         {
         }
 
@@ -1210,10 +1387,7 @@ namespace sgl
         int m_viewport_y;
         int m_viewport_width;
         int m_viewport_height;
-        float m_clear_color_red;
-        float m_clear_color_green;
-        float m_clear_color_blue;
-        float m_clear_color_alpha;
+        Vector4 m_clear_color;
         float m_clear_depth;
         int m_clear_stencil;
         Vector<VertexAttribArray> m_vertex_attrib_arrays;
@@ -1224,6 +1398,14 @@ namespace sgl
         bool m_cull_face_enable;
         GLenum m_cull_face;
         GLenum m_front_face;
+        bool m_blend_enable;
+        GLenum m_blend_src_factor_c;
+        GLenum m_blend_src_factor_a;
+        GLenum m_blend_dest_factor_c;
+        GLenum m_blend_dest_factor_a;
+        GLenum m_blend_equation_c;
+        GLenum m_blend_equation_a;
+        Vector4 m_blend_color;
     };
 }
 
@@ -1373,3 +1555,8 @@ IMPLEMENT_VOID_GL_FUNC_2(DepthRangef, GLfloat, GLfloat)
 IMPLEMENT_VOID_GL_FUNC_1(DepthFunc, GLenum)
 IMPLEMENT_VOID_GL_FUNC_1(CullFace, GLenum)
 IMPLEMENT_VOID_GL_FUNC_1(FrontFace, GLenum)
+IMPLEMENT_VOID_GL_FUNC_2(BlendFunc, GLenum, GLenum)
+IMPLEMENT_VOID_GL_FUNC_4(BlendFuncSeparate, GLenum, GLenum, GLenum, GLenum)
+IMPLEMENT_VOID_GL_FUNC_1(BlendEquation, GLenum)
+IMPLEMENT_VOID_GL_FUNC_2(BlendEquationSeparate, GLenum, GLenum)
+IMPLEMENT_VOID_GL_FUNC_4(BlendColor, GLfloat, GLfloat, GLfloat, GLfloat)

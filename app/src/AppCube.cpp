@@ -52,7 +52,9 @@ public:
         glCullFace(GL_BACK);
         glFrontFace(GL_CCW);
 
-        glDisable(GL_BLEND); //glBlendFunc
+        glDisable(GL_BLEND);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+        glBlendEquation(GL_FUNC_ADD);
 
         // color rb
         glGenRenderbuffers(1, &m_rb_color);
@@ -150,38 +152,6 @@ void main()\n\
         };
         glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), &indices[0], GL_STATIC_DRAW);
 
-        // for test api
-        {
-            glIsRenderbuffer(m_rb_color);
-            GLint width;
-            glGetRenderbufferParameteriv(GL_RENDERBUFFER, GL_RENDERBUFFER_WIDTH, &width);
-
-            glIsFramebuffer(m_fb);
-            GLint type;
-            glGetFramebufferAttachmentParameteriv(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_FRAMEBUFFER_ATTACHMENT_OBJECT_TYPE, &type);
-            GLint name;
-            glGetFramebufferAttachmentParameteriv(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_FRAMEBUFFER_ATTACHMENT_OBJECT_NAME, &name);
-
-            glIsShader(vs);
-
-            char buffer[1024];
-            glGetShaderSource(vs, 1024, nullptr, buffer);
-            glShaderBinary(0, nullptr, 0, nullptr, 0);
-            glReleaseShaderCompiler();
-            glGetShaderPrecisionFormat(0, 0, nullptr, nullptr);
-            glGetShaderiv(0, 0, nullptr);
-            glGetShaderInfoLog(0, 0, nullptr, nullptr);
-
-            glIsProgram(m_program);
-
-            int count;
-            GLuint shaders[10];
-            glGetAttachedShaders(m_program, 10, &count, shaders);
-
-            glIsBuffer(m_vb);
-            glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(vertices), &vertices[0]);
-        }
-
         //glFramebufferTexture2D
 
         //glGenTextures
@@ -228,42 +198,36 @@ void main()\n\
 
         glUseProgram(m_program);
 
-        Matrix4x4 models[2];
-        models[0] = Matrix4x4::Rotation(Quaternion::Euler(0, m_deg, 0));
-        models[1] = Matrix4x4::Translation(Vector3(0.5f, -0.5f, -1.5f));
+        Matrix4x4 model = Matrix4x4::Rotation(Quaternion::Euler(0, m_deg, 0));
         Matrix4x4 view = Matrix4x4::LookTo(
             Vector3(0, 0, -4),
             Vector3(0, 0, 1),
             Vector3(0, 1, 0));
         Matrix4x4 proj = Matrix4x4::Perspective(60, 1280 / 720.0f, 0.3f, 1000);
         
+        Matrix4x4 u_mvp = proj * view * model;
         Vector4 u_color(1, 1, 1, 1);
 
-        for (int i = 0; i < 2; ++i)
-        {
-            Matrix4x4 mvp = proj * view * models[i];
+        int loc_u_mvp = glGetUniformLocation(m_program, "u_mvp");
+        int loc_u_color = glGetUniformLocation(m_program, "u_color");
 
-            int loc_u_mvp = glGetUniformLocation(m_program, "u_mvp");
-            int loc_u_color = glGetUniformLocation(m_program, "u_color");
+        glUniformMatrix4fv(loc_u_mvp, 1, true, (const GLfloat*) &u_mvp);
+        glUniform4fv(loc_u_color, 1, (const GLfloat*) &u_color);
 
-            glUniformMatrix4fv(loc_u_mvp, 1, true, (const GLfloat*) &mvp);
-            glUniform4fv(loc_u_color, 1, (const GLfloat*) &u_color);
+        int loc_a_position = glGetAttribLocation(m_program, "a_position");
+        int loc_a_color = glGetAttribLocation(m_program, "a_color");
 
-            int loc_a_position = glGetAttribLocation(m_program, "a_position");
-            int loc_a_color = glGetAttribLocation(m_program, "a_color");
+        glVertexAttribPointer(loc_a_position, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (const void*) 0);
+        glVertexAttribPointer(loc_a_color, 4, GL_FLOAT, GL_FALSE, sizeof(Vertex), (const void*) (sizeof(Vector3) + sizeof(Vector2)));
+        glEnableVertexAttribArray(loc_a_position);
+        glEnableVertexAttribArray(loc_a_color);
 
-            glVertexAttribPointer(loc_a_position, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (const void*) 0);
-            glVertexAttribPointer(loc_a_color, 4, GL_FLOAT, GL_FALSE, sizeof(Vertex), (const void*) (sizeof(Vector3) + sizeof(Vector2)));
-            glEnableVertexAttribArray(loc_a_position);
-            glEnableVertexAttribArray(loc_a_color);
+        glBindBuffer(GL_ARRAY_BUFFER, m_vb);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_ib);
+        glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_SHORT, (const void*) 0);
 
-            glBindBuffer(GL_ARRAY_BUFFER, m_vb);
-            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_ib);
-            glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_SHORT, (const void*) 0);
-
-            glDisableVertexAttribArray(loc_a_position);
-            glDisableVertexAttribArray(loc_a_color);
-        }
+        glDisableVertexAttribArray(loc_a_position);
+        glDisableVertexAttribArray(loc_a_color);
 
         m_deg += 1;
     }
