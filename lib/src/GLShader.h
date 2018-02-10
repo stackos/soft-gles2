@@ -45,7 +45,8 @@ namespace sgl
 
     private:
         const Viry3D::Vector<Viry3D::String>& GetVertexAttribs() const;
-        const Viry3D::Vector<Viry3D::String>& GetUniforms() const;
+        Viry3D::Vector<Viry3D::String> GetUniformNames() const;
+        Viry3D::Vector<Viry3D::String> GetUniformTypes() const;
         Viry3D::Vector<Viry3D::String> GetVaryingNames() const;
         Viry3D::Vector<Viry3D::String> GetVaryingTypes() const;
 

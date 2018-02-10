@@ -198,6 +198,9 @@
     <ClCompile Include="..\..\src\GLRasterizer.cpp">
       <Filter>src</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\src\GLTexture2D.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\src\math\Bounds.h">
@@ -360,6 +363,9 @@
       <Filter>src</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\GLRasterizer.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\GLTexture2D.h">
       <Filter>src</Filter>
     </ClInclude>
   </ItemGroup>

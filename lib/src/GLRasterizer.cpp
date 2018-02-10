@@ -321,35 +321,3 @@ namespace sgl
         }
     }
 }
-
-/*
-class Texture
-{
-public:
-    int width;
-    int height;
-    int bpp;
-    ByteBuffer data;
-};
-
-class Sampler2D
-{
-public:
-    typedef Color(*Sample)(Texture*, const Vector2*);
-    Texture* texture;
-    Sample sample_func = Sampler2D::SampleTexture;
-
-    static Color SampleTexture(Texture* tex, const Vector2* uv)
-    {
-        int x = (int) ((tex->width - 1) * Mathf::Clamp01(uv->x));
-        int y = (int) ((tex->height - 1) * Mathf::Clamp01(uv->y));
-
-        int r = tex->data[y * tex->width * 4 + x * 4 + 0];
-        int g = tex->data[y * tex->width * 4 + x * 4 + 1];
-        int b = tex->data[y * tex->width * 4 + x * 4 + 2];
-        int a = tex->data[y * tex->width * 4 + x * 4 + 3];
-
-        return Color(r / 255.0f, g / 255.0f, b / 255.0f, a / 255.0f);
-    }
-};
-*/

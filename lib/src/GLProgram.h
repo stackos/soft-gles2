@@ -26,6 +26,7 @@
 namespace sgl
 {
     class GLShader;
+    class GLTexture2D;
 
     class GLProgramPrivate;
     class GLProgram: public GLObject
@@ -74,6 +75,8 @@ namespace sgl
         GLint GetAttribLocation(const GLchar* name) const;
         GLint GetUniformLocation(const GLchar* name) const;
         void Use();
+        bool IsUniformSampler2D(GLint location) const;
+        void UniformSampler2D(GLint location, const Ref<GLTexture2D>& texture) const;
         void Uniformv(GLint location, int size, const void* value) const;
         void UniformMatrix4fv(GLint location, GLsizei count, GLboolean transpose, const GLfloat* value) const;
         void SetVertexAttrib(GLuint index, const void* data, int size) const;

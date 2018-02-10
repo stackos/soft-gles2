@@ -17,6 +17,7 @@
 
 #include "GLProgram.h"
 #include "GLShader.h"
+#include "GLTexture2D.h"
 #include "exec_cmd.h"
 #include "io/File.h"
 #include "string/String.h"
@@ -56,6 +57,7 @@ namespace sgl
         struct Uniform
         {
             String name;
+            String type;
             int location;
             GLProgram::VarSetter setter;
 
@@ -64,6 +66,18 @@ namespace sgl
                 location(-1),
                 setter(nullptr)
             {
+            }
+        };
+
+        struct Sampler2D
+        {
+            typedef Vector4(*Sample)(GLTexture2D*, const Vector2*);
+            GLTexture2D* texture;
+            Sample sample_func = Sampler2D::SampleTexture;
+
+            static Vector4 SampleTexture(GLTexture2D* tex, const Vector2* uv)
+            {
+                return tex->Sample(*uv);
             }
         };
 
@@ -132,8 +146,8 @@ namespace sgl
 
         void BindUniformLocations()
         {
-            Vector<String> uniforms_vs = m_shaders[0]->GetUniforms();
-            Vector<String> uniforms_fs = m_shaders[1]->GetUniforms();
+            Vector<String> uniforms_vs = m_shaders[0]->GetUniformNames();
+            Vector<String> uniforms_fs = m_shaders[1]->GetUniformNames();
             Vector<String> uniforms;
             if (uniforms_vs.Size() > 0)
             {
@@ -163,6 +177,22 @@ namespace sgl
                     u.location = m_uniforms.Size();
 
                     m_uniforms.Add(u);
+                }
+            }
+
+            Vector<String> uniforms_fs_types = m_shaders[1]->GetUniformTypes();
+            for (int i = 0; i < uniforms_fs_types.Size(); ++i)
+            {
+                if (uniforms_fs_types[i] == "sampler2D")
+                {
+                    for (int j = 0; j < m_uniforms.Size(); ++j)
+                    {
+                        if (m_uniforms[j].name == uniforms_fs[i])
+                        {
+                            m_uniforms[j].type = uniforms_fs_types[i];
+                            break;
+                        }
+                    }
                 }
             }
         }
@@ -427,6 +457,36 @@ namespace sgl
                 String func_name = "set_" + varying_names[i];
                 v.setter = (VarSetter) GetProcAddress(dll, func_name.CString());
                 m_private->m_fs_varyings.Add(v);
+            }
+        }
+    }
+
+    bool GLProgram::IsUniformSampler2D(GLint location) const
+    {
+        for (const auto& i : m_private->m_uniforms)
+        {
+            if (i.location == location)
+            {
+                if (i.type == "sampler2D")
+                {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    void GLProgram::UniformSampler2D(GLint location, const Ref<GLTexture2D>& texture) const
+    {
+        for (const auto& i : m_private->m_uniforms)
+        {
+            if (i.location == location)
+            {
+                GLProgramPrivate::Sampler2D sampler;
+                sampler.texture = texture.get();
+                i.setter((void*) &sampler, sizeof(GLProgramPrivate::Sampler2D));
+                break;
             }
         }
     }

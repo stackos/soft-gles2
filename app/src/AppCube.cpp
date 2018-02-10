@@ -90,11 +90,14 @@ public:
         const char* vs_src = "\
 uniform mat4 u_mvp;\n\
 attribute vec4 a_position;\n\
+attribute vec2 a_uv;\n\
 attribute vec4 a_color;\n\
+varying vec2 v_uv;\n\
 varying vec4 v_color;\n\
 void main()\n\
 {\n\
     gl_Position = u_mvp * a_position;\n\
+    v_uv = a_uv;\n\
     v_color = a_color;\n\
 }";
         glShaderSource(vs, 1, (const GLchar* const*) &vs_src, nullptr);
@@ -103,11 +106,13 @@ void main()\n\
         GLuint fs = glCreateShader(GL_FRAGMENT_SHADER);
         const char* ps_src = "\
 precision highp float;\n\
+uniform sampler2D u_tex;\n\
 uniform vec4 u_color;\n\
+varying vec2 v_uv;\n\
 varying vec4 v_color;\n\
 void main()\n\
 {\n\
-    gl_FragColor = v_color * u_color;\n\
+    gl_FragColor = texture2D(u_tex, v_uv) * v_color * u_color;\n\
 }";
         glShaderSource(fs, 1, (const GLchar* const*) &ps_src, nullptr);
         glCompileShader(fs);
@@ -118,7 +123,8 @@ void main()\n\
         glAttachShader(m_program, fs);
 
         glBindAttribLocation(m_program, 0, "a_position");
-        glBindAttribLocation(m_program, 1, "a_color");
+        glBindAttribLocation(m_program, 1, "a_uv");
+        glBindAttribLocation(m_program, 2, "a_color");
 
         glLinkProgram(m_program);
 
@@ -152,12 +158,10 @@ void main()\n\
         };
         glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), &indices[0], GL_STATIC_DRAW);
 
-        //glFramebufferTexture2D
+        // tex
+        glGenTextures(1, &m_tex);
+        glBindTexture(GL_TEXTURE_2D, m_tex);
 
-        //glGenTextures
-        //glDeleteTextures
-        //glIsTexture
-        //glBindTexture
         //glActiveTexture
         //glTexImage2D
         //glTexSubImage2D
@@ -165,12 +169,7 @@ void main()\n\
         //glTexParameterfv
         //glTexParameteri
         //glTexParameteriv
-        //glGetTexParameterfv
-        //glGetTexParameteriv
-        //glCopyTexImage2D
-        //glCopyTexSubImage2D
-        //glCompressedTexImage2D
-        //glCompressedTexSubImage2D
+        //glFramebufferTexture2D
 
         glDeleteShader(vs);
         glDeleteShader(fs);
@@ -190,6 +189,7 @@ void main()\n\
         glDeleteProgram(m_program);
         glDeleteBuffers(1, &m_vb);
         glDeleteBuffers(1, &m_ib);
+        glDeleteTextures(1, &m_tex);
     }
 
     void Draw()
@@ -210,23 +210,32 @@ void main()\n\
 
         int loc_u_mvp = glGetUniformLocation(m_program, "u_mvp");
         int loc_u_color = glGetUniformLocation(m_program, "u_color");
+        int loc_u_tex = glGetUniformLocation(m_program, "u_tex");
 
         glUniformMatrix4fv(loc_u_mvp, 1, true, (const GLfloat*) &u_mvp);
         glUniform4fv(loc_u_color, 1, (const GLfloat*) &u_color);
 
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, m_tex);
+        glUniform1i(loc_u_tex, 0);
+
         int loc_a_position = glGetAttribLocation(m_program, "a_position");
+        int loc_a_uv = glGetAttribLocation(m_program, "a_uv");
         int loc_a_color = glGetAttribLocation(m_program, "a_color");
 
+        glBindBuffer(GL_ARRAY_BUFFER, m_vb);
         glVertexAttribPointer(loc_a_position, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (const void*) 0);
+        glVertexAttribPointer(loc_a_uv, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (const void*) sizeof(Vector3));
         glVertexAttribPointer(loc_a_color, 4, GL_FLOAT, GL_FALSE, sizeof(Vertex), (const void*) (sizeof(Vector3) + sizeof(Vector2)));
         glEnableVertexAttribArray(loc_a_position);
+        glEnableVertexAttribArray(loc_a_uv);
         glEnableVertexAttribArray(loc_a_color);
 
-        glBindBuffer(GL_ARRAY_BUFFER, m_vb);
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_ib);
         glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_SHORT, (const void*) 0);
 
         glDisableVertexAttribArray(loc_a_position);
+        glDisableVertexAttribArray(loc_a_uv);
         glDisableVertexAttribArray(loc_a_color);
 
         m_deg += 1;
@@ -239,6 +248,7 @@ void main()\n\
     GLuint m_program;
     GLuint m_vb;
     GLuint m_ib;
+    GLuint m_tex;
     float m_deg;
 };
 

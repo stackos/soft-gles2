@@ -154,7 +154,19 @@ struct mat4
 
 private:
     vec4 m_columns[4];
+
+    friend vec4 operator*(const vec4& v, const mat4& m);
 };
+
+static vec4 operator*(const vec4& v, const mat4& m)
+{
+    float x = v.x * m.m_columns[0][0] + v.y * m.m_columns[0][1] + v.z * m.m_columns[0][2] + v.w * m.m_columns[0][3];
+    float y = v.x * m.m_columns[1][0] + v.y * m.m_columns[1][1] + v.z * m.m_columns[1][2] + v.w * m.m_columns[1][3];
+    float z = v.x * m.m_columns[2][0] + v.y * m.m_columns[2][1] + v.z * m.m_columns[2][2] + v.w * m.m_columns[2][3];
+    float w = v.x * m.m_columns[3][0] + v.y * m.m_columns[3][1] + v.z * m.m_columns[3][2] + v.w * m.m_columns[3][3];
+
+    return vec4(x, y, z, w);
+}
 
 static vec4 gl_Position;
 

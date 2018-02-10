@@ -30,6 +30,18 @@ namespace sgl
     class GLShaderPrivate
     {
     public:
+        struct Uniform
+        {
+            String name;
+            String type;
+
+            Uniform(const String& name, const String& type):
+                name(name),
+                type(type)
+            {
+            }
+        };
+
         struct Varying
         {
             String name;
@@ -66,7 +78,7 @@ namespace sgl
 
                 if (words[0] == "uniform")
                 {
-                    m_uniforms.Add(words[2]);
+                    m_uniforms.Add(Uniform(words[2], words[1]));
                 }
                 else if (words[0] == "varying")
                 {
@@ -118,7 +130,7 @@ namespace sgl
 
             for (int i = 0; i < m_uniforms.Size(); ++i)
             {
-                src += String::Format("VAR_SETTER(%s)\n", m_uniforms[i].CString());
+                src += String::Format("VAR_SETTER(%s)\n", m_uniforms[i].name.CString());
             }
 
             if (m_p->m_type == GL_VERTEX_SHADER)
@@ -150,7 +162,7 @@ namespace sgl
         }
 
         GLShader* m_p;
-        Vector<String> m_uniforms;
+        Vector<Uniform> m_uniforms;
         Vector<String> m_attributes;
         Vector<Varying> m_varyings;
         ByteBuffer m_obj_bin;
@@ -256,9 +268,24 @@ namespace sgl
         return m_private->m_attributes;
     }
 
-    const Vector<String>& GLShader::GetUniforms() const
+    Vector<String> GLShader::GetUniformNames() const
     {
-        return m_private->m_uniforms;
+        Vector<String> names;
+        for (const auto& i : m_private->m_uniforms)
+        {
+            names.Add(i.name);
+        }
+        return names;
+    }
+
+    Vector<String> GLShader::GetUniformTypes() const
+    {
+        Vector<String> types;
+        for (const auto& i : m_private->m_uniforms)
+        {
+            types.Add(i.type);
+        }
+        return types;
     }
 
     Vector<String> GLShader::GetVaryingNames() const

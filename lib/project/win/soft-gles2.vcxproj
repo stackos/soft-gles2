@@ -27,6 +27,7 @@
     <ClCompile Include="..\..\src\GLProgram.cpp" />
     <ClCompile Include="..\..\src\GLRasterizer.cpp" />
     <ClCompile Include="..\..\src\GLShader.cpp" />
+    <ClCompile Include="..\..\src\GLTexture2D.cpp" />
     <ClCompile Include="..\..\src\graphics\Image.cpp" />
     <ClCompile Include="..\..\src\io\Directory.cpp" />
     <ClCompile Include="..\..\src\io\File.cpp" />
@@ -92,6 +93,7 @@
     <ClInclude Include="..\..\src\GLRenderbuffer.h" />
     <ClInclude Include="..\..\src\GLShader.h" />
     <ClInclude Include="..\..\src\GLTexture.h" />
+    <ClInclude Include="..\..\src\GLTexture2D.h" />
     <ClInclude Include="..\..\src\graphics\Image.h" />
     <ClInclude Include="..\..\src\io\Directory.h" />
     <ClInclude Include="..\..\src\io\File.h" />

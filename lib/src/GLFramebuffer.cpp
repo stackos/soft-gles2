@@ -17,7 +17,7 @@
 
 #include "GLFramebuffer.h"
 #include "GLRenderbuffer.h"
-#include "GLTexture.h"
+#include "GLTexture2D.h"
 
 namespace sgl
 {
@@ -87,9 +87,9 @@ namespace sgl
                     w = rbo->GetWidth();
                     h = rbo->GetHeight();
                 }
-                else if (RefCast<GLTexture>(obj))
+                else if (RefCast<GLTexture2D>(obj))
                 {
-                    Ref<GLTexture> tex = RefCast<GLTexture>(obj);
+                    Ref<GLTexture2D> tex = RefCast<GLTexture2D>(obj);
                     if (w != -1 && h != -1 && (w != tex->GetWidth() || h != tex->GetHeight()))
                     {
                         same_size = false;

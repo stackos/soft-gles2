@@ -17,18 +17,30 @@
 
 #pragma once
 
-#include "GLObject.h"
+#include "GLTexture.h"
+#include "math/Vector2.h"
+#include "math/Vector4.h"
 
 namespace sgl
 {
-    class GLTexture: public GLObject
+    class GLTexture2D: public GLTexture
     {
     public:
-        GLTexture(GLuint id):
-            GLObject(id)
+        GLTexture2D(GLuint id):
+            GLTexture(id),
+            m_width(0),
+            m_height(0)
         {
         }
+        
+        virtual ~GLTexture2D() { }
 
-        virtual ~GLTexture() { }
+        int GetWidth() const { return m_width; }
+        int GetHeight() const { return m_height; }
+        Viry3D::Vector4 Sample(const Viry3D::Vector2& uv) const;
+
+    private:
+        int m_width;
+        int m_height;
     };
 }

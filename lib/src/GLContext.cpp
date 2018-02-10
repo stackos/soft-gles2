@@ -28,17 +28,18 @@
 #include "GLObject.h"
 #include "GLFramebuffer.h"
 #include "GLRenderbuffer.h"
-#include "GLTexture.h"
 #include "GLShader.h"
 #include "GLProgram.h"
 #include "GLBuffer.h"
 #include "GLRasterizer.h"
+#include "GLTexture.h"
+#include "GLTexture2D.h"
 #include <functional>
 
 using namespace Viry3D;
 
-//const char* g_vs_path = "C:\\Program Files (x86)\\Microsoft Visual Studio\\2017\\Community";
-const char* g_vs_path = "D:\\Program\\VS2017";
+const char* g_vs_path = "C:\\Program Files (x86)\\Microsoft Visual Studio\\2017\\Community";
+//const char* g_vs_path = "D:\\Program\\VS2017";
 
 namespace sgl
 {
@@ -54,6 +55,7 @@ namespace sgl
             GLboolean normalized;
             GLsizei stride;
             const GLvoid* pointer;
+            WeakRef<GLBuffer> vb;
         };
 
         void SetDefaultBuffers(void* color_buffer, void* depth_buffer, void* stencil_buffer, int width, int height)
@@ -633,6 +635,30 @@ namespace sgl
             }
         }
 
+        void Uniform1i(GLint location, GLint v0)
+        {
+            if (!m_using_program.expired())
+            {
+                Ref<GLProgram> program = m_using_program.lock();
+                if (program->IsUniformSampler2D(location))
+                {
+                    WeakRef<GLTexture> tex = m_texture_units[m_active_texture_unit - GL_TEXTURE0];
+                    if (!tex.expired())
+                    {
+                        Ref<GLTexture2D> tex2d = RefCast<GLTexture2D>(tex.lock());
+                        if (tex2d)
+                        {
+                            program->UniformSampler2D(location, tex2d);
+                        }
+                    }
+                }
+                else
+                {
+                    program->Uniformv(location, sizeof(int), &v0);
+                }
+            }
+        }
+
         void Uniform4fv(GLint location, GLsizei count, const GLfloat* value)
         {
             if (!m_using_program.expired())
@@ -748,6 +774,7 @@ namespace sgl
             va.normalized = normalized;
             va.stride = stride;
             va.pointer = pointer;
+            va.vb = m_current_vb;
 
             int exist_index = -1;
             for (int i = 0; i < m_vertex_attrib_arrays.Size(); ++i)
@@ -816,6 +843,7 @@ namespace sgl
             if (exist_index >= 0)
             {
                 m_vertex_attrib_arrays[exist_index].enable = false;
+                m_vertex_attrib_arrays[exist_index].vb.reset();
             }
         }
 
@@ -869,9 +897,9 @@ namespace sgl
                             break;
                     }
 
-                    if (!m_current_vb.expired())
+                    if (!va.vb.expired())
                     {
-                        Ref<GLBuffer> vb = m_current_vb.lock();
+                        Ref<GLBuffer> vb = va.vb.lock();
                         char* p = (char*) vb->GetData();
                         int offset = (int) (size_t) va.pointer;
                         program->SetVertexAttrib(va.index, &p[index * va.stride + offset], size);
@@ -1327,6 +1355,55 @@ namespace sgl
             return false;
         }
 
+        void GenTextures(GLsizei n, GLuint* textures)
+        {
+            this->GenObjects<GLTexture>(n, textures);
+        }
+
+        void DeleteTextures(GLsizei n, const GLuint* textures)
+        {
+            this->DeleteObjects<GLTexture>(n, textures);
+        }
+
+        GLboolean IsTexture(GLuint texture)
+        {
+            return this->ObjectIs<GLTexture>(texture);
+        }
+
+        void ActiveTexture(GLenum texture)
+        {
+            m_active_texture_unit = texture;
+        }
+
+        void BindTexture(GLenum target, GLuint texture)
+        {
+            switch (target)
+            {
+                case GL_TEXTURE_2D:
+                {
+                    Ref<GLTexture> tex = this->ObjectGet<GLTexture>(texture);
+                    if (tex)
+                    {
+                        Ref<GLTexture2D> tex2d = RefCast<GLTexture2D>(tex);
+                        if (!tex2d)
+                        {
+                            tex2d = RefMake<GLTexture2D>(tex->GetId());
+                            m_objects[texture] = tex2d;
+                        }
+
+                        m_texture_units[m_active_texture_unit - GL_TEXTURE0] = tex2d;
+                    }
+                    else
+                    {
+                        m_texture_units[m_active_texture_unit - GL_TEXTURE0].reset();
+                    }
+                    break;
+                }
+                case GL_TEXTURE_CUBE_MAP:
+                    break;
+            }
+        }
+
         GLContext():
             m_default_color_buffer(nullptr),
             m_default_depth_buffer(nullptr),
@@ -1355,7 +1432,8 @@ namespace sgl
             m_blend_dest_factor_a(GL_ZERO),
             m_blend_equation_c(GL_FUNC_ADD),
             m_blend_equation_a(GL_FUNC_ADD),
-            m_blend_color(0, 0, 0, 0)
+            m_blend_color(0, 0, 0, 0),
+            m_active_texture_unit(GL_TEXTURE0)
         {
         }
 
@@ -1406,6 +1484,8 @@ namespace sgl
         GLenum m_blend_equation_c;
         GLenum m_blend_equation_a;
         Vector4 m_blend_color;
+        WeakRef<GLTexture> m_texture_units[32];
+        GLenum m_active_texture_unit;
     };
 }
 
@@ -1529,6 +1609,7 @@ IMPLEMENT_VOID_GL_FUNC_1(LinkProgram, GLuint)
 IMPLEMENT_GL_FUNC_2(GLint, GetAttribLocation, GLuint, const GLchar*)
 IMPLEMENT_GL_FUNC_2(GLint, GetUniformLocation, GLuint, const GLchar*)
 IMPLEMENT_VOID_GL_FUNC_1(UseProgram, GLuint)
+IMPLEMENT_VOID_GL_FUNC_2(Uniform1i, GLint, GLint)
 IMPLEMENT_VOID_GL_FUNC_3(Uniform4fv, GLint, GLsizei, const GLfloat*)
 IMPLEMENT_VOID_GL_FUNC_4(UniformMatrix4fv, GLint, GLsizei, GLboolean, const GLfloat*)
 
@@ -1560,3 +1641,10 @@ IMPLEMENT_VOID_GL_FUNC_4(BlendFuncSeparate, GLenum, GLenum, GLenum, GLenum)
 IMPLEMENT_VOID_GL_FUNC_1(BlendEquation, GLenum)
 IMPLEMENT_VOID_GL_FUNC_2(BlendEquationSeparate, GLenum, GLenum)
 IMPLEMENT_VOID_GL_FUNC_4(BlendColor, GLfloat, GLfloat, GLfloat, GLfloat)
+
+// Texture
+IMPLEMENT_VOID_GL_FUNC_2(GenTextures, GLsizei, GLuint*)
+IMPLEMENT_VOID_GL_FUNC_2(DeleteTextures, GLsizei, const GLuint*)
+IMPLEMENT_GL_FUNC_1(GLboolean, IsTexture, GLuint)
+IMPLEMENT_VOID_GL_FUNC_1(ActiveTexture, GLenum)
+IMPLEMENT_VOID_GL_FUNC_2(BindTexture, GLenum, GLuint)
