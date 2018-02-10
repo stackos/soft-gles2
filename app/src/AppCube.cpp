@@ -162,13 +162,13 @@ void main()\n\
         glGenTextures(1, &m_tex);
         glBindTexture(GL_TEXTURE_2D, m_tex);
 
-        //glActiveTexture
         //glTexImage2D
         //glTexSubImage2D
         //glTexParameterf
         //glTexParameterfv
         //glTexParameteri
         //glTexParameteriv
+
         //glFramebufferTexture2D
 
         glDeleteShader(vs);
