@@ -181,6 +181,7 @@ static vec4 texture2D(const sampler2D& sampler, const vec2& uv)
     return sampler.sample_func(sampler.texture, (void*) &uv);
 }
 
+static vec4 gl_FragCoord;
 static vec4 gl_FragColor;
 
 //

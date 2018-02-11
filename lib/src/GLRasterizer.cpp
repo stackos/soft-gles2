@@ -170,9 +170,11 @@ namespace sgl
                         m_program->SetFSVarying(m_varyings[0][j].name, &varying, m_varyings[0][j].size);
                     }
 
-                    Vector4 color = *(Vector4*) m_program->CallFSMain();
                     float depth = depths[2] * a01 + depths[0] * a12 + depths[1] * a20;
+                    Vector4 frag_coord(x, y, depth, 1.0f / w);
 
+                    Vector4 color = *(Vector4*) m_program->CallFSMain(frag_coord);
+                    
                     m_set_fragment(p, color, depth);
                 }
             }

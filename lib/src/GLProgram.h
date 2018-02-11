@@ -83,7 +83,7 @@ namespace sgl
         void* CallVSMain() const;
         Viry3D::Vector<Varying> GetVSVaryings() const;
         void SetFSVarying(const Viry3D::String& name, const void* data, int size) const;
-        void* CallFSMain() const;
+        void* CallFSMain(const Viry3D::Vector4& frag_coord) const;
 
     private:
         friend class GLProgramPrivate;

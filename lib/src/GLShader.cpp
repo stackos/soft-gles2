@@ -66,7 +66,8 @@ namespace sgl
             src = src.Replace("\t", " ").Replace("\r", " ").Replace("\n", " ");
             Vector<String> sentences = src.Split(";", true);
 
-            Vector<String> builtins;
+            Vector<String> builtins_set;
+            Vector<String> builtins_get;
             m_uniforms.Clear();
             m_attributes.Clear();
             m_varyings.Clear();
@@ -109,14 +110,15 @@ namespace sgl
 
             if (m_p->m_type == GL_VERTEX_SHADER)
             {
-                builtins.Add("gl_Position");
+                builtins_get.Add("gl_Position");
 
                 temp_file = "temp.vs";
                 src = File::ReadAllText("Assets/shader/vs_include.txt") + "\n";
             }
             else if (m_p->m_type == GL_FRAGMENT_SHADER)
             {
-                builtins.Add("gl_FragColor");
+                builtins_set.Add("gl_FragCoord");
+                builtins_get.Add("gl_FragColor");
 
                 temp_file = "temp.fs";
                 src = File::ReadAllText("Assets/shader/fs_include.txt") + "\n";
@@ -153,9 +155,14 @@ namespace sgl
                 }
             }
 
-            for (int i = 0; i < builtins.Size(); ++i)
+            for (int i = 0; i < builtins_set.Size(); ++i)
             {
-                src += String::Format("VAR_GETTER(%s)\n", builtins[i].CString());
+                src += String::Format("VAR_SETTER(%s)\n", builtins_set[i].CString());
+            }
+
+            for (int i = 0; i < builtins_get.Size(); ++i)
+            {
+                src += String::Format("VAR_GETTER(%s)\n", builtins_get[i].CString());
             }
 
             File::WriteAllText(temp_file + ".cpp", src);

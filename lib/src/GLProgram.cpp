@@ -85,8 +85,9 @@ namespace sgl
             m_p(p),
             m_dll(nullptr),
             m_vs_main(nullptr),
-            m_fs_main(nullptr),
             m_get_gl_Position(nullptr),
+            m_set_gl_FragCoord(nullptr),
+            m_fs_main(nullptr),
             m_get_gl_FragColor(nullptr)
         {
         }
@@ -206,8 +207,9 @@ namespace sgl
         Vector<GLProgram::Varying> m_fs_varyings;
         HMODULE m_dll;
         GLProgram::Main m_vs_main;
-        GLProgram::Main m_fs_main;
         GLProgram::VarGetter m_get_gl_Position;
+        GLProgram::VarSetter m_set_gl_FragCoord;
+        GLProgram::Main m_fs_main;
         GLProgram::VarGetter m_get_gl_FragColor;
     };
 
@@ -396,6 +398,7 @@ namespace sgl
             m_private->m_vs_main = (Main) GetProcAddress(dll, "vs_main");
             m_private->m_get_gl_Position = (VarGetter) GetProcAddress(dll, "get_gl_Position");
             
+            m_private->m_set_gl_FragCoord = (VarSetter) GetProcAddress(dll, "set_gl_FragCoord");
             m_private->m_fs_main = (Main) GetProcAddress(dll, "fs_main");
             m_private->m_get_gl_FragColor = (VarGetter) GetProcAddress(dll, "get_gl_FragColor");
 
@@ -562,7 +565,7 @@ namespace sgl
         return varyings;
     }
 
-    void GLProgram::SetFSVarying(const Viry3D::String& name, const void* data, int size) const
+    void GLProgram::SetFSVarying(const String& name, const void* data, int size) const
     {
         for (const auto& i : m_private->m_fs_varyings)
         {
@@ -574,8 +577,9 @@ namespace sgl
         }
     }
 
-    void* GLProgram::CallFSMain() const
+    void* GLProgram::CallFSMain(const Vector4& frag_coord) const
     {
+        m_private->m_set_gl_FragCoord((void*) &frag_coord, sizeof(Vector4));
         m_private->m_fs_main();
         return m_private->m_get_gl_FragColor();
     }

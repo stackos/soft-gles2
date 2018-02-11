@@ -23,7 +23,8 @@ namespace sgl
 {
     Vector4 GLTexture2D::Sample(const Vector2& uv) const
     {
-        /*int x = (int) ((tex->width - 1) * Mathf::Clamp01(uv->x));
+        /*
+        int x = (int) ((tex->width - 1) * Mathf::Clamp01(uv->x));
         int y = (int) ((tex->height - 1) * Mathf::Clamp01(uv->y));
 
         int r = tex->data[y * tex->width * 4 + x * 4 + 0];
@@ -31,7 +32,8 @@ namespace sgl
         int b = tex->data[y * tex->width * 4 + x * 4 + 2];
         int a = tex->data[y * tex->width * 4 + x * 4 + 3];
 
-        return Color(r / 255.0f, g / 255.0f, b / 255.0f, a / 255.0f);*/
+        return Color(r / 255.0f, g / 255.0f, b / 255.0f, a / 255.0f);
+        */
 
         return Vector4(1, 1, 1, 1);
     }
