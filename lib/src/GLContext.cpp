@@ -38,8 +38,8 @@
 
 using namespace Viry3D;
 
-const char* g_vs_path = "C:\\Program Files (x86)\\Microsoft Visual Studio\\2017\\Community";
-//const char* g_vs_path = "D:\\Program\\VS2017";
+//const char* g_vs_path = "C:\\Program Files (x86)\\Microsoft Visual Studio\\2017\\Community";
+const char* g_vs_path = "D:\\Program\\VS2017";
 
 namespace sgl
 {

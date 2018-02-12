@@ -83,6 +83,7 @@ namespace sgl
             int y_top, int y_bottom, bool include_bottom,
             const Vector2i& p0, const Vector2i& p1, const Vector2i& p2);
         void DrawScanLine(int y, int min_x, int max_x, const Vector2i& p0, const Vector2i& p1, const Vector2i& p2);
+        void DrawScanLine2(int y0, int min_x0, int max_x0, int min_x1, int max_x1, bool draw_y1, const Vector2i& p0, const Vector2i& p1, const Vector2i& p2);
 
         const Viry3D::Vector4* m_positions;
         const Viry3D::Vector<GLProgram::Varying>* m_varyings;

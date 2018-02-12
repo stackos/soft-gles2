@@ -130,6 +130,123 @@ namespace sgl
         return m_viewport_y + (y * 0.5f + 0.5f) * m_viewport_height;
     }
 
+    void GLRasterizer::DrawScanLine2(int y0, int min_x0, int max_x0, int min_x1, int max_x1, bool draw_y1, const Vector2i& p0, const Vector2i& p1, const Vector2i& p2)
+    {
+        // 重心坐标插值
+        float one_div_area = 1.0f / fabs(Vector2i::Cross(p0 - p1, p2 - p1) / 2.0f);
+        // 透视校正
+        float one_div_ws[3] = {
+            1.0f / m_positions[0].w,
+            1.0f / m_positions[1].w,
+            1.0f / m_positions[2].w,
+        };
+        float depths[3] = {
+            m_positions[0].z * one_div_ws[0],
+            m_positions[1].z * one_div_ws[1],
+            m_positions[2].z * one_div_ws[2],
+        };
+
+        int y = y0;
+        int min_x = Mathf::Min(min_x0, min_x1);
+        int max_x = Mathf::Max(max_x0, max_x1) + 1;
+        int mins[2] = { min_x0, min_x1 };
+        int maxs[2] = { max_x0, max_x1 };
+
+        for (int x = min_x; x <= max_x; x += 2)
+        {
+            struct Varying
+            {
+                Vector4 value;
+                String name;
+                int size;
+            };
+
+            struct Fragment
+            {
+                Vector2i p;
+                bool draw;
+                Vector4 frag_coord;
+                float depth;
+                Vector<Varying> varyings;
+            };
+            Fragment fragment[2][2];
+
+            // 2 x 2 block
+            for (int iy = 0; iy < 2; ++iy)
+            {
+                for (int ix = 0; ix < 2; ++ix)
+                {
+                    Fragment& f = fragment[iy][ix];
+
+                    Vector2i p(x + ix, y - iy);
+                    int w1 = EdgeEquation(p, p0, p1, m_ccw);
+                    int w2 = EdgeEquation(p, p1, p2, m_ccw);
+                    int w3 = EdgeEquation(p, p2, p0, m_ccw);
+
+                    float a01 = fabs(Vector2i::Cross(p1 - p, p0 - p) / 2.0f) * one_div_area;
+                    float a12 = fabs(Vector2i::Cross(p2 - p, p1 - p) / 2.0f) * one_div_area;
+                    float a20 = 1.0f - a01 - a12;
+
+                    float w = 1.0f / (a01 * one_div_ws[2] + a12 * one_div_ws[0] + a20 * one_div_ws[1]);
+
+                    int varying_count = m_varyings[0].Size();
+                    for (int i = 0; i < varying_count; ++i)
+                    {
+                        Vector4 varying = (m_varyings[2][i].value * a01 * one_div_ws[2] + m_varyings[0][i].value * a12 * one_div_ws[0] + m_varyings[1][i].value * a20 * one_div_ws[1]) * w;
+                        
+                        Varying v;
+                        v.value = varying;
+                        v.name = m_varyings[0][i].name;
+                        v.size = m_varyings[0][i].size;
+
+                        f.varyings.Add(v);
+                    }
+
+                    float depth = depths[2] * a01 + depths[0] * a12 + depths[1] * a20;
+                    Vector4 frag_coord((float) p.x, (float) p.y, depth, 1.0f / w);
+
+                    f.p = p;
+                    f.draw = w1 >= 0 && w2 >= 0 && w3 >= 0;
+                    f.frag_coord = frag_coord;
+                    f.depth = depth;
+                }
+            }
+
+            int lines = 0;
+            if (draw_y1)
+            {
+                lines = 2;
+            }
+            else
+            {
+                lines = 1;
+            }
+
+            for (int iy = 0; iy < lines; ++iy)
+            {
+                for (int ix = 0; ix < 2; ++ix)
+                {
+                    const Fragment& f = fragment[iy][ix];
+
+                    if (f.draw &&
+                        f.p.x >= mins[iy] && f.p.x <= maxs[iy] &&
+                        f.p.x >= m_viewport_x && f.p.x < m_viewport_x + m_viewport_width)
+                    {
+                        for (int i = 0; i < f.varyings.Size(); ++i)
+                        {
+                            const Varying& v = f.varyings[i];
+                            m_program->SetFSVarying(v.name, &v.value, v.size);
+                        }
+
+                        Vector4 color = *(Vector4*) m_program->CallFSMain(f.frag_coord);
+
+                        m_set_fragment(f.p, color, f.depth);
+                    }
+                }
+            }
+        }
+    }
+
     void GLRasterizer::DrawScanLine(int y, int min_x, int max_x, const Vector2i& p0, const Vector2i& p1, const Vector2i& p2)
     {
         // 重心坐标插值
@@ -171,7 +288,7 @@ namespace sgl
                     }
 
                     float depth = depths[2] * a01 + depths[0] * a12 + depths[1] * a20;
-                    Vector4 frag_coord(x, y, depth, 1.0f / w);
+                    Vector4 frag_coord((float) p.x, (float) p.y, depth, 1.0f / w);
 
                     Vector4 color = *(Vector4*) m_program->CallFSMain(frag_coord);
                     
@@ -189,6 +306,12 @@ namespace sgl
         int i1 = 0;
         int i2 = 0;
         int y = y_top;
+
+        int y0 = -1;
+        int min_x0 = -1;
+        int max_x0 = -1;
+        int lines = 0;
+
         while (y >= y_bottom)
         {
             if (y == y_bottom && include_bottom == false)
@@ -229,10 +352,25 @@ namespace sgl
 
             if (y >= m_viewport_y && y < m_viewport_y + m_viewport_height)
             {
-                DrawScanLine(y, min_x, max_x, p0, p1, p2);
+                if (lines % 2 == 1)
+                {
+                    DrawScanLine2(y0, min_x0, max_x0, min_x, max_x, true, p0, p1, p2);
+                }
+
+                y0 = y;
+                min_x0 = min_x;
+                max_x0 = max_x;
+
+                //DrawScanLine(y, min_x, max_x, p0, p1, p2);
             }
 
-            y--;
+            --y;
+            ++lines;
+        }
+
+        if (lines % 2 == 1)
+        {
+            DrawScanLine2(y0, min_x0, max_x0, min_x0, max_x0, false, p0, p1, p2);
         }
     }
 
