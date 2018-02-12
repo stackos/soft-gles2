@@ -58,35 +58,6 @@ public:
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
         glBlendEquation(GL_FUNC_ADD);
 
-        // color rb
-        glGenRenderbuffers(1, &m_rb_color);
-        glBindRenderbuffer(GL_RENDERBUFFER, m_rb_color);
-        glRenderbufferStorage(GL_RENDERBUFFER, GL_RGB565, 1280, 720);
-        
-        // depth rb
-        glGenRenderbuffers(1, &m_rb_depth);
-        glBindRenderbuffer(GL_RENDERBUFFER, m_rb_depth);
-        glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT16, 1280, 720);
-
-        // stencil rb
-        glGenRenderbuffers(1, &m_rb_stencil);
-        glBindRenderbuffer(GL_RENDERBUFFER, m_rb_stencil);
-        glRenderbufferStorage(GL_RENDERBUFFER, GL_STENCIL_INDEX8, 1280, 720);
-
-        // fb
-        glGenFramebuffers(1, &m_fb);
-        glBindFramebuffer(GL_FRAMEBUFFER, m_fb);
-
-        glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_RENDERBUFFER, m_rb_color);
-        glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, m_rb_depth);
-        glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_STENCIL_ATTACHMENT, GL_RENDERBUFFER, m_rb_stencil);
-
-        GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
-        if (status == GL_FRAMEBUFFER_COMPLETE)
-        {
-            Log("frame buffer status ok");
-        }
-
         // shader
         GLuint vs = glCreateShader(GL_VERTEX_SHADER);
         const char* vs_src = "\
@@ -170,30 +141,14 @@ void main()\n\
         ByteBuffer image = Image::LoadPNG(File::ReadAllBytes("Assets/texture/girl.png"), width, height, bpp);
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, image.Bytes());
 
-        //glTexImage2D
-        //glTexSubImage2D
-        //glTexParameterf
-        //glTexParameterfv
-        //glTexParameteri
-        //glTexParameteriv
-
-        //glFramebufferTexture2D
-
         glDeleteShader(vs);
         glDeleteShader(fs);
-
-        // set to default frame buffer
-        glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
         m_deg = 0;
     }
 
     virtual ~Renderer()
     {
-        glDeleteFramebuffers(1, &m_fb);
-        glDeleteRenderbuffers(1, &m_rb_color);
-        glDeleteRenderbuffers(1, &m_rb_depth);
-        glDeleteRenderbuffers(1, &m_rb_stencil);
         glDeleteProgram(m_program);
         glDeleteBuffers(1, &m_vb);
         glDeleteBuffers(1, &m_ib);
@@ -249,10 +204,6 @@ void main()\n\
         m_deg += 1;
     }
 
-    GLuint m_fb;
-    GLuint m_rb_color;
-    GLuint m_rb_depth;
-    GLuint m_rb_stencil;
     GLuint m_program;
     GLuint m_vb;
     GLuint m_ib;
