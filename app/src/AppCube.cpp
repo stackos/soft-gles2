@@ -106,7 +106,7 @@ void main()\n\
         glCompileShader(vs);
 
         GLuint fs = glCreateShader(GL_FRAGMENT_SHADER);
-        const char* ps_src = "\
+        const char* fs_src = "\
 precision highp float;\n\
 uniform sampler2D u_tex;\n\
 uniform vec4 u_color;\n\
@@ -116,7 +116,7 @@ void main()\n\
 {\n\
     gl_FragColor = texture2D(u_tex, v_uv);// * v_color * u_color;\n\
 }";
-        glShaderSource(fs, 1, (const GLchar* const*) &ps_src, nullptr);
+        glShaderSource(fs, 1, (const GLchar* const*) &fs_src, nullptr);
         glCompileShader(fs);
 
         m_program = glCreateProgram();
