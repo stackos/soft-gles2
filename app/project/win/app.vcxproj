@@ -20,6 +20,11 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\lib\src\Debug.cpp" />
+    <ClCompile Include="..\..\..\lib\src\graphics\Image.cpp" />
+    <ClCompile Include="..\..\..\lib\src\io\Directory.cpp" />
+    <ClCompile Include="..\..\..\lib\src\io\File.cpp" />
+    <ClCompile Include="..\..\..\lib\src\io\MemoryStream.cpp" />
+    <ClCompile Include="..\..\..\lib\src\io\Stream.cpp" />
     <ClCompile Include="..\..\..\lib\src\math\Bounds.cpp" />
     <ClCompile Include="..\..\..\lib\src\math\Frustum.cpp" />
     <ClCompile Include="..\..\..\lib\src\math\Mathf.cpp" />
@@ -30,7 +35,35 @@
     <ClCompile Include="..\..\..\lib\src\math\Vector2.cpp" />
     <ClCompile Include="..\..\..\lib\src\math\Vector3.cpp" />
     <ClCompile Include="..\..\..\lib\src\memory\ByteBuffer.cpp" />
+    <ClCompile Include="..\..\..\lib\src\png\png.c" />
+    <ClCompile Include="..\..\..\lib\src\png\pngerror.c" />
+    <ClCompile Include="..\..\..\lib\src\png\pngget.c" />
+    <ClCompile Include="..\..\..\lib\src\png\pngmem.c" />
+    <ClCompile Include="..\..\..\lib\src\png\pngpread.c" />
+    <ClCompile Include="..\..\..\lib\src\png\pngread.c" />
+    <ClCompile Include="..\..\..\lib\src\png\pngrio.c" />
+    <ClCompile Include="..\..\..\lib\src\png\pngrtran.c" />
+    <ClCompile Include="..\..\..\lib\src\png\pngrutil.c" />
+    <ClCompile Include="..\..\..\lib\src\png\pngset.c" />
+    <ClCompile Include="..\..\..\lib\src\png\pngtrans.c" />
+    <ClCompile Include="..\..\..\lib\src\png\pngwio.c" />
+    <ClCompile Include="..\..\..\lib\src\png\pngwrite.c" />
+    <ClCompile Include="..\..\..\lib\src\png\pngwtran.c" />
+    <ClCompile Include="..\..\..\lib\src\png\pngwutil.c" />
     <ClCompile Include="..\..\..\lib\src\string\String.cpp" />
+    <ClCompile Include="..\..\..\lib\src\zlib\adler32.c" />
+    <ClCompile Include="..\..\..\lib\src\zlib\compress.c" />
+    <ClCompile Include="..\..\..\lib\src\zlib\crc32.c" />
+    <ClCompile Include="..\..\..\lib\src\zlib\deflate.c" />
+    <ClCompile Include="..\..\..\lib\src\zlib\infback.c" />
+    <ClCompile Include="..\..\..\lib\src\zlib\inffast.c" />
+    <ClCompile Include="..\..\..\lib\src\zlib\inflate.c" />
+    <ClCompile Include="..\..\..\lib\src\zlib\inftrees.c" />
+    <ClCompile Include="..\..\..\lib\src\zlib\ioapi.c" />
+    <ClCompile Include="..\..\..\lib\src\zlib\trees.c" />
+    <ClCompile Include="..\..\..\lib\src\zlib\uncompr.c" />
+    <ClCompile Include="..\..\..\lib\src\zlib\unzip.c" />
+    <ClCompile Include="..\..\..\lib\src\zlib\zutil.c" />
     <ClCompile Include="..\..\bin\test.fs.cpp" />
     <ClCompile Include="..\..\bin\test.vs.cpp" />
     <ClCompile Include="..\..\src\AppCube.cpp" />
@@ -38,6 +71,11 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\lib\src\Debug.h" />
+    <ClInclude Include="..\..\..\lib\src\graphics\Image.h" />
+    <ClInclude Include="..\..\..\lib\src\io\Directory.h" />
+    <ClInclude Include="..\..\..\lib\src\io\File.h" />
+    <ClInclude Include="..\..\..\lib\src\io\MemoryStream.h" />
+    <ClInclude Include="..\..\..\lib\src\io\Stream.h" />
     <ClInclude Include="..\..\..\lib\src\math\Bounds.h" />
     <ClInclude Include="..\..\..\lib\src\math\Frustum.h" />
     <ClInclude Include="..\..\..\lib\src\math\Mathf.h" />
@@ -51,7 +89,26 @@
     <ClInclude Include="..\..\..\lib\src\memory\ByteBuffer.h" />
     <ClInclude Include="..\..\..\lib\src\memory\Memory.h" />
     <ClInclude Include="..\..\..\lib\src\memory\Ref.h" />
+    <ClInclude Include="..\..\..\lib\src\png\png.h" />
+    <ClInclude Include="..\..\..\lib\src\png\pngconf.h" />
+    <ClInclude Include="..\..\..\lib\src\png\pngdebug.h" />
+    <ClInclude Include="..\..\..\lib\src\png\pnginfo.h" />
+    <ClInclude Include="..\..\..\lib\src\png\pnglibconf.h" />
+    <ClInclude Include="..\..\..\lib\src\png\pngpriv.h" />
+    <ClInclude Include="..\..\..\lib\src\png\pngstruct.h" />
     <ClInclude Include="..\..\..\lib\src\string\String.h" />
+    <ClInclude Include="..\..\..\lib\src\zlib\crc32.h" />
+    <ClInclude Include="..\..\..\lib\src\zlib\deflate.h" />
+    <ClInclude Include="..\..\..\lib\src\zlib\inffast.h" />
+    <ClInclude Include="..\..\..\lib\src\zlib\inffixed.h" />
+    <ClInclude Include="..\..\..\lib\src\zlib\inflate.h" />
+    <ClInclude Include="..\..\..\lib\src\zlib\inftrees.h" />
+    <ClInclude Include="..\..\..\lib\src\zlib\ioapi.h" />
+    <ClInclude Include="..\..\..\lib\src\zlib\trees.h" />
+    <ClInclude Include="..\..\..\lib\src\zlib\unzip.h" />
+    <ClInclude Include="..\..\..\lib\src\zlib\zconf.h" />
+    <ClInclude Include="..\..\..\lib\src\zlib\zlib.h" />
+    <ClInclude Include="..\..\..\lib\src\zlib\zutil.h" />
     <ClInclude Include="..\..\src\display\DisplayWindows.h" />
   </ItemGroup>
   <ItemGroup>
@@ -114,22 +171,22 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
     <OutDir>$(SolutionDir)..\..\bin\</OutDir>
-    <IncludePath>../../src;../../../lib/src;$(IncludePath)</IncludePath>
+    <IncludePath>../../src;../../../lib/src;../../../lib/src/zlib;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
     <OutDir>$(SolutionDir)..\..\bin\</OutDir>
-    <IncludePath>../../src;../../../lib/src;$(IncludePath)</IncludePath>
+    <IncludePath>../../src;../../../lib/src;../../../lib/src/zlib;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
     <OutDir>$(SolutionDir)..\..\bin\</OutDir>
-    <IncludePath>../../src;../../../lib/src;$(IncludePath)</IncludePath>
+    <IncludePath>../../src;../../../lib/src;../../../lib/src/zlib;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
     <OutDir>$(SolutionDir)..\..\bin\</OutDir>
-    <IncludePath>../../src;../../../lib/src;$(IncludePath)</IncludePath>
+    <IncludePath>../../src;../../../lib/src;../../../lib/src/zlib;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -137,7 +194,7 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>VR_WINDOWS;WIN32;_DEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>VR_WINDOWS;_CRT_SECURE_NO_WARNINGS;WIN32;_DEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeaderFile />
     </ClCompile>
@@ -152,7 +209,7 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>VR_WINDOWS;_DEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>VR_WINDOWS;_CRT_SECURE_NO_WARNINGS;_DEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeaderFile />
     </ClCompile>
@@ -169,7 +226,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>VR_WINDOWS;WIN32;NDEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>VR_WINDOWS;_CRT_SECURE_NO_WARNINGS;WIN32;NDEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeaderFile />
     </ClCompile>
@@ -188,7 +245,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>VR_WINDOWS;NDEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>VR_WINDOWS;_CRT_SECURE_NO_WARNINGS;NDEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeaderFile />
     </ClCompile>

@@ -23,6 +23,8 @@
 #include "math/Vector3.h"
 #include "math/Vector4.h"
 #include "math/Matrix4x4.h"
+#include "io/File.h"
+#include "graphics/Image.h"
 
 using namespace Viry3D;
 
@@ -112,7 +114,7 @@ varying vec2 v_uv;\n\
 varying vec4 v_color;\n\
 void main()\n\
 {\n\
-    gl_FragColor = texture2D(u_tex, v_uv) * v_color * u_color;\n\
+    gl_FragColor = texture2D(u_tex, v_uv);// * v_color * u_color;\n\
 }";
         glShaderSource(fs, 1, (const GLchar* const*) &ps_src, nullptr);
         glCompileShader(fs);
@@ -137,10 +139,10 @@ void main()\n\
             { Vector3(-0.5f, -0.5f, -0.5f), Vector2(0, 1), Vector4(1, 0, 0, 1) },
             { Vector3(0.5f, -0.5f, -0.5f), Vector2(1, 1), Vector4(0, 1, 0, 1) },
             { Vector3(0.5f, 0.5f, -0.5f), Vector2(1, 0), Vector4(0, 0, 1, 1) },
-            { Vector3(-0.5f, 0.5f, 0.5f), Vector2(0, 0), Vector4(0, 1, 1, 1) },
-            { Vector3(-0.5f, -0.5f, 0.5f), Vector2(0, 1), Vector4(1, 0, 1, 1) },
-            { Vector3(0.5f, -0.5f, 0.5f), Vector2(1, 1), Vector4(1, 1, 0, 1) },
-            { Vector3(0.5f, 0.5f, 0.5f), Vector2(1, 0), Vector4(1, 1, 1, 1) },
+            { Vector3(-0.5f, 0.5f, 0.5f), Vector2(1, 0), Vector4(0, 1, 1, 1) },
+            { Vector3(-0.5f, -0.5f, 0.5f), Vector2(1, 1), Vector4(1, 0, 1, 1) },
+            { Vector3(0.5f, -0.5f, 0.5f), Vector2(0, 1), Vector4(1, 1, 0, 1) },
+            { Vector3(0.5f, 0.5f, 0.5f), Vector2(0, 0), Vector4(1, 1, 1, 1) },
         };
         glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), &vertices[0], GL_STATIC_DRAW);
 
@@ -161,6 +163,12 @@ void main()\n\
         // tex
         glGenTextures(1, &m_tex);
         glBindTexture(GL_TEXTURE_2D, m_tex);
+
+        int width;
+        int height;
+        int bpp;
+        ByteBuffer image = Image::LoadPNG(File::ReadAllBytes("Assets/texture/girl.png"), width, height, bpp);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, image.Bytes());
 
         //glTexImage2D
         //glTexSubImage2D
@@ -198,7 +206,7 @@ void main()\n\
 
         glUseProgram(m_program);
 
-        Matrix4x4 model = Matrix4x4::Rotation(Quaternion::Euler(0, m_deg, 0));
+        Matrix4x4 model = Matrix4x4::Rotation(Quaternion::Euler(0, m_deg, 0)) * Matrix4x4::Scaling(Vector3(1, 2, 1));
         Matrix4x4 view = Matrix4x4::LookTo(
             Vector3(0, 0, -4),
             Vector3(0, 0, 1),

@@ -281,10 +281,10 @@ namespace sgl
                     float w = 1.0f / (a01 * one_div_ws[2] + a12 * one_div_ws[0] + a20 * one_div_ws[1]);
 
                     int varying_count = m_varyings[0].Size();
-                    for (int j = 0; j < varying_count; ++j)
+                    for (int i = 0; i < varying_count; ++i)
                     {
-                        Vector4 varying = (m_varyings[2][j].value * a01 * one_div_ws[2] + m_varyings[0][j].value * a12 * one_div_ws[0] + m_varyings[1][j].value * a20 * one_div_ws[1]) * w;
-                        m_program->SetFSVarying(m_varyings[0][j].name, &varying, m_varyings[0][j].size);
+                        Vector4 varying = (m_varyings[2][i].value * a01 * one_div_ws[2] + m_varyings[0][i].value * a12 * one_div_ws[0] + m_varyings[1][i].value * a20 * one_div_ws[1]) * w;
+                        m_program->SetFSVarying(m_varyings[0][i].name, &varying, m_varyings[0][i].size);
                     }
 
                     float depth = depths[2] * a01 + depths[0] * a12 + depths[1] * a20;
@@ -354,14 +354,14 @@ namespace sgl
             {
                 if (lines % 2 == 1)
                 {
-                    DrawScanLine2(y0, min_x0, max_x0, min_x, max_x, true, p0, p1, p2);
+                    //DrawScanLine2(y0, min_x0, max_x0, min_x, max_x, true, p0, p1, p2);
                 }
 
                 y0 = y;
                 min_x0 = min_x;
                 max_x0 = max_x;
 
-                //DrawScanLine(y, min_x, max_x, p0, p1, p2);
+                DrawScanLine(y, min_x, max_x, p0, p1, p2);
             }
 
             --y;
@@ -370,7 +370,7 @@ namespace sgl
 
         if (lines % 2 == 1)
         {
-            DrawScanLine2(y0, min_x0, max_x0, min_x0, max_x0, false, p0, p1, p2);
+            //DrawScanLine2(y0, min_x0, max_x0, min_x0, max_x0, false, p0, p1, p2);
         }
     }
 

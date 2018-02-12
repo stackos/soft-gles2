@@ -23,24 +23,25 @@
 
 namespace sgl
 {
+    class GLTexture2DPrivate;
     class GLTexture2D: public GLTexture
     {
     public:
-        GLTexture2D(GLuint id):
-            GLTexture(id),
-            m_width(0),
-            m_height(0)
-        {
-        }
-        
-        virtual ~GLTexture2D() { }
+        GLTexture2D(GLuint id);
+        virtual ~GLTexture2D();
 
+        void TexImage2D(GLint level, GLint internalformat, GLsizei width, GLsizei height, GLenum format, GLenum type, const void* pixels);
         int GetWidth() const { return m_width; }
         int GetHeight() const { return m_height; }
         Viry3D::Vector4 Sample(const Viry3D::Vector2& uv) const;
 
     private:
+        friend class GLTexture2DPrivate;
+        GLTexture2DPrivate* m_private;
         int m_width;
         int m_height;
+        GLint m_internalformat;
+        GLenum m_format;
+        GLenum m_type;
     };
 }

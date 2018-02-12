@@ -38,8 +38,8 @@
 
 using namespace Viry3D;
 
-//const char* g_vs_path = "C:\\Program Files (x86)\\Microsoft Visual Studio\\2017\\Community";
-const char* g_vs_path = "D:\\Program\\VS2017";
+const char* g_vs_path = "C:\\Program Files (x86)\\Microsoft Visual Studio\\2017\\Community";
+//const char* g_vs_path = "D:\\Program\\VS2017";
 
 namespace sgl
 {
@@ -1404,6 +1404,27 @@ namespace sgl
             }
         }
 
+        void TexImage2D(GLenum target, GLint level, GLint internalformat, GLsizei width, GLsizei height, GLint border, GLenum format, GLenum type, const void* pixels)
+        {
+            switch (target)
+            {
+                case GL_TEXTURE_2D:
+                {
+                    if (!m_texture_units[m_active_texture_unit - GL_TEXTURE0].expired())
+                    {
+                        Ref<GLTexture2D> tex2d = RefCast<GLTexture2D>(m_texture_units[m_active_texture_unit - GL_TEXTURE0].lock());
+                        if (tex2d)
+                        {
+                            tex2d->TexImage2D(level, internalformat, width, height, format, type, pixels);
+                        }
+                    }
+                    break;
+                }
+                case GL_TEXTURE_CUBE_MAP:
+                    break;
+            }
+        }
+
         GLContext():
             m_default_color_buffer(nullptr),
             m_default_depth_buffer(nullptr),
@@ -1544,6 +1565,10 @@ __declspec(dllexport) void set_gl_context_default_buffers(void* color_buffer, vo
     void GL_APIENTRY gl##func(t1 p1, t2 p2, t3 p3, t4 p4, t5 p5, t6 p6, t7 p7) { \
         gl->func(p1, p2, p3, p4, p5, p6, p7); \
     }
+#define IMPLEMENT_VOID_GL_FUNC_9(func, t1, t2, t3, t4, t5, t6, t7, t8, t9) \
+    void GL_APIENTRY gl##func(t1 p1, t2 p2, t3 p3, t4 p4, t5 p5, t6 p6, t7 p7, t8 p8, t9 p9) { \
+        gl->func(p1, p2, p3, p4, p5, p6, p7, p8, p9); \
+    }
 #define IMPLEMENT_GL_FUNC_0(ret, func) \
     ret GL_APIENTRY gl##func() { \
         return gl->func(); \
@@ -1648,3 +1673,4 @@ IMPLEMENT_VOID_GL_FUNC_2(DeleteTextures, GLsizei, const GLuint*)
 IMPLEMENT_GL_FUNC_1(GLboolean, IsTexture, GLuint)
 IMPLEMENT_VOID_GL_FUNC_1(ActiveTexture, GLenum)
 IMPLEMENT_VOID_GL_FUNC_2(BindTexture, GLenum, GLuint)
+IMPLEMENT_VOID_GL_FUNC_9(TexImage2D, GLenum, GLint, GLint, GLsizei, GLsizei, GLint, GLenum, GLenum, const void*)

@@ -28,7 +28,6 @@
     <ClCompile Include="..\..\src\GLRasterizer.cpp" />
     <ClCompile Include="..\..\src\GLShader.cpp" />
     <ClCompile Include="..\..\src\GLTexture2D.cpp" />
-    <ClCompile Include="..\..\src\graphics\Image.cpp" />
     <ClCompile Include="..\..\src\io\Directory.cpp" />
     <ClCompile Include="..\..\src\io\File.cpp" />
     <ClCompile Include="..\..\src\io\MemoryStream.cpp" />
@@ -43,30 +42,11 @@
     <ClCompile Include="..\..\src\math\Vector2.cpp" />
     <ClCompile Include="..\..\src\math\Vector3.cpp" />
     <ClCompile Include="..\..\src\memory\ByteBuffer.cpp" />
-    <ClCompile Include="..\..\src\png\png.c" />
-    <ClCompile Include="..\..\src\png\pngerror.c" />
-    <ClCompile Include="..\..\src\png\pngget.c" />
-    <ClCompile Include="..\..\src\png\pngmem.c" />
-    <ClCompile Include="..\..\src\png\pngpread.c" />
-    <ClCompile Include="..\..\src\png\pngread.c" />
-    <ClCompile Include="..\..\src\png\pngrio.c" />
-    <ClCompile Include="..\..\src\png\pngrtran.c" />
-    <ClCompile Include="..\..\src\png\pngrutil.c" />
-    <ClCompile Include="..\..\src\png\pngset.c" />
-    <ClCompile Include="..\..\src\png\pngtrans.c" />
-    <ClCompile Include="..\..\src\png\pngwio.c" />
-    <ClCompile Include="..\..\src\png\pngwrite.c" />
-    <ClCompile Include="..\..\src\png\pngwtran.c" />
-    <ClCompile Include="..\..\src\png\pngwutil.c" />
     <ClCompile Include="..\..\src\string\String.cpp" />
     <ClCompile Include="..\..\src\zlib\adler32.c" />
     <ClCompile Include="..\..\src\zlib\compress.c" />
     <ClCompile Include="..\..\src\zlib\crc32.c" />
     <ClCompile Include="..\..\src\zlib\deflate.c" />
-    <ClCompile Include="..\..\src\zlib\gzclose.c" />
-    <ClCompile Include="..\..\src\zlib\gzlib.c" />
-    <ClCompile Include="..\..\src\zlib\gzread.c" />
-    <ClCompile Include="..\..\src\zlib\gzwrite.c" />
     <ClCompile Include="..\..\src\zlib\infback.c" />
     <ClCompile Include="..\..\src\zlib\inffast.c" />
     <ClCompile Include="..\..\src\zlib\inflate.c" />
@@ -94,7 +74,6 @@
     <ClInclude Include="..\..\src\GLShader.h" />
     <ClInclude Include="..\..\src\GLTexture.h" />
     <ClInclude Include="..\..\src\GLTexture2D.h" />
-    <ClInclude Include="..\..\src\graphics\Image.h" />
     <ClInclude Include="..\..\src\io\Directory.h" />
     <ClInclude Include="..\..\src\io\File.h" />
     <ClInclude Include="..\..\src\io\MemoryStream.h" />
@@ -112,17 +91,9 @@
     <ClInclude Include="..\..\src\memory\ByteBuffer.h" />
     <ClInclude Include="..\..\src\memory\Memory.h" />
     <ClInclude Include="..\..\src\memory\Ref.h" />
-    <ClInclude Include="..\..\src\png\png.h" />
-    <ClInclude Include="..\..\src\png\pngconf.h" />
-    <ClInclude Include="..\..\src\png\pngdebug.h" />
-    <ClInclude Include="..\..\src\png\pnginfo.h" />
-    <ClInclude Include="..\..\src\png\pnglibconf.h" />
-    <ClInclude Include="..\..\src\png\pngpriv.h" />
-    <ClInclude Include="..\..\src\png\pngstruct.h" />
     <ClInclude Include="..\..\src\string\String.h" />
     <ClInclude Include="..\..\src\zlib\crc32.h" />
     <ClInclude Include="..\..\src\zlib\deflate.h" />
-    <ClInclude Include="..\..\src\zlib\gzguts.h" />
     <ClInclude Include="..\..\src\zlib\inffast.h" />
     <ClInclude Include="..\..\src\zlib\inffixed.h" />
     <ClInclude Include="..\..\src\zlib\inflate.h" />
@@ -189,22 +160,22 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
     <OutDir>$(SolutionDir)..\..\..\app\bin\</OutDir>
-    <IncludePath>../../src;../../src/zlib;$(IncludePath)</IncludePath>
+    <IncludePath>../../src;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
     <OutDir>$(SolutionDir)..\..\..\app\bin\</OutDir>
-    <IncludePath>../../src;../../src/zlib;$(IncludePath)</IncludePath>
+    <IncludePath>../../src;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
     <OutDir>$(SolutionDir)..\..\..\app\bin\</OutDir>
-    <IncludePath>../../src;../../src/zlib;$(IncludePath)</IncludePath>
+    <IncludePath>../../src;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
     <OutDir>$(SolutionDir)..\..\..\app\bin\</OutDir>
-    <IncludePath>../../src;../../src/zlib;$(IncludePath)</IncludePath>
+    <IncludePath>../../src;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -212,7 +183,7 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>VR_WINDOWS;_CRT_SECURE_NO_WARNINGS;WINAPI_FAMILY=100;WIN32;_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>VR_WINDOWS;_CRT_SECURE_NO_WARNINGS;WIN32;_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeaderFile />
     </ClCompile>
@@ -227,7 +198,7 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>VR_WINDOWS;_CRT_SECURE_NO_WARNINGS;WINAPI_FAMILY=100;_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>VR_WINDOWS;_CRT_SECURE_NO_WARNINGS;_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeaderFile />
     </ClCompile>
@@ -244,7 +215,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>VR_WINDOWS;_CRT_SECURE_NO_WARNINGS;WINAPI_FAMILY=100;WIN32;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>VR_WINDOWS;_CRT_SECURE_NO_WARNINGS;WIN32;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeaderFile />
     </ClCompile>
@@ -263,7 +234,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>VR_WINDOWS;_CRT_SECURE_NO_WARNINGS;WINAPI_FAMILY=100;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>VR_WINDOWS;_CRT_SECURE_NO_WARNINGS;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeaderFile />
     </ClCompile>
