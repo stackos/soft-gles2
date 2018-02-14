@@ -19,35 +19,13 @@
 
 #include "GLProgram.h"
 #include "math/Vector4.h"
+#include "math/Vector2i.h"
 #include "container/Vector.h"
 #include <functional>
 
 namespace sgl
 {
-    struct Vector2i
-    {
-        int x;
-        int y;
-
-        Vector2i(int x = 0, int y = 0): x(x), y(y) { }
-
-        Vector2i operator -(const Vector2i& right) const
-        {
-            return Vector2i(x - right.x, y - right.y);
-        }
-
-        static int Dot(const Vector2i& left, const Vector2i& right)
-        {
-            return left.x * right.x + left.y * right.y;
-        }
-
-        static int Cross(const Vector2i& left, const Vector2i& right)
-        {
-            return left.x * right.y - left.y * right.x;
-        }
-    };
-
-    typedef std::function<void(const Vector2i& p, const Viry3D::Vector4& c, float depth)> SetFragmentFunc;
+    typedef std::function<void(const Viry3D::Vector2i& p, const Viry3D::Vector4& c, float depth)> SetFragmentFunc;
 
     class GLRasterizer
     {
@@ -79,11 +57,11 @@ namespace sgl
         float ProjToScreenX(float x);
         float ProjToScreenY(float y);
         void DrawHalfTriangle(
-            const Viry3D::Vector<Vector2i>& e1, const Viry3D::Vector<Vector2i>& e2,
+            const Viry3D::Vector<Viry3D::Vector2i>& e1, const Viry3D::Vector<Viry3D::Vector2i>& e2,
             int y_top, int y_bottom, bool include_bottom,
-            const Vector2i& p0, const Vector2i& p1, const Vector2i& p2);
-        void DrawScanLine(int y, int min_x, int max_x, const Vector2i& p0, const Vector2i& p1, const Vector2i& p2);
-        void DrawScanLine2(int y0, int min_x0, int max_x0, int min_x1, int max_x1, bool draw_y1, const Vector2i& p0, const Vector2i& p1, const Vector2i& p2);
+            const Viry3D::Vector2i& p0, const Viry3D::Vector2i& p1, const Viry3D::Vector2i& p2);
+        void DrawScanLine(int y, int min_x, int max_x, const Viry3D::Vector2i& p0, const Viry3D::Vector2i& p1, const Viry3D::Vector2i& p2);
+        void DrawScanLine2(int y0, int min_x0, int max_x0, int min_x1, int max_x1, bool draw_y1, const Viry3D::Vector2i& p0, const Viry3D::Vector2i& p1, const Viry3D::Vector2i& p2);
 
         const Viry3D::Vector4* m_positions;
         const Viry3D::Vector<GLProgram::Varying>* m_varyings;
@@ -96,4 +74,3 @@ namespace sgl
         bool m_ccw;
     };
 }
- 
