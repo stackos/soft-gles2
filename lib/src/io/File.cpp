@@ -74,18 +74,20 @@ namespace Viry3D
 
 	String File::ReadAllText(const String& path)
 	{
-		return String(ReadAllBytes(path));
+		return String(File::ReadAllBytes(path));
 	}
 
 	void File::WriteAllText(const String& path, const String& text)
 	{
 		ByteBuffer buffer((byte*) text.CString(), text.Size());
-		WriteAllBytes(path, buffer);
+        File::WriteAllBytes(path, buffer);
 	}
 
     void File::Delete(const String& path)
     {
-        DeleteFile(path.CString());
+#if VR_WINDOWS
+        ::DeleteFile(path.CString());
+#endif
     }
 
 	static void unzip_file(unzFile file, const String& path)
