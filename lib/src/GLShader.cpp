@@ -24,6 +24,8 @@
 using namespace Viry3D;
 
 extern const char* g_vs_path;
+extern const char* vc_version;
+extern const char* win_sdk_inc;
 
 namespace sgl
 {
@@ -238,11 +240,11 @@ namespace sgl
 
         if (isX64)
         {
-            cl_dir = String(g_vs_path) + "\\VC\\Tools\\MSVC\\14.12.25827\\bin\\" + host + "\\x64";
+            cl_dir = String(g_vs_path) + "\\VC\\Tools\\MSVC\\" + vc_version + "\\bin\\" + host + "\\x64";
         }
         else
         {
-            cl_dir = String(g_vs_path) + "\\VC\\Tools\\MSVC\\14.12.25827\\bin\\" + host + "\\x86";
+            cl_dir = String(g_vs_path) + "\\VC\\Tools\\MSVC\\" + vc_version + "\\bin\\" + host + "\\x86";
         }
 
         String temp_src_name;
@@ -250,8 +252,8 @@ namespace sgl
         String temp_out_name = temp_src_name + ".out.txt";
 
         exec_cmd(cl_dir, "cl.exe", "/c " + temp_src_name + ".cpp "
-            "/I \"" + g_vs_path + "\\VC\\Tools\\MSVC\\14.12.25827\\include\" "
-            "/I \"C:\\Program Files (x86)\\Windows Kits\\10\\Include\\10.0.16299.0\\ucrt\"",
+            "/I \"" + g_vs_path + "\\VC\\Tools\\MSVC\\" + vc_version + "\\include\" "
+            "/I \"" + win_sdk_inc + "\"",
             temp_out_name);
 
         String out_text = File::ReadAllText(temp_out_name);

@@ -38,8 +38,10 @@
 
 using namespace Viry3D;
 
-//const char* g_vs_path = "C:\\Program Files (x86)\\Microsoft Visual Studio\\2017\\Community";
-const char* g_vs_path = "D:\\Program\\VS2017";
+const char* g_vs_path = "C:\\Program Files (x86)\\Microsoft Visual Studio\\2019\\Community";
+const char* vc_version = "14.22.27905";
+const char* win_sdk_inc = "C:\\Program Files (x86)\\Windows Kits\\10\\Include\\10.0.18362.0\\ucrt";
+const char* win_sdk_lib = "C:\\Program Files (x86)\\Windows Kits\\10\\lib\\10.0.18362.0";
 
 namespace sgl
 {

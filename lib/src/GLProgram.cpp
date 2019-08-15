@@ -34,6 +34,8 @@
 using namespace Viry3D;
 
 extern const char* g_vs_path;
+extern const char* vc_version;
+extern const char* win_sdk_lib;
 
 namespace sgl
 {
@@ -306,11 +308,11 @@ namespace sgl
 
         if (isX64)
         {
-            cl_dir = String(g_vs_path) + "\\VC\\Tools\\MSVC\\14.12.25827\\bin\\" + host + "\\x64";
+            cl_dir = String(g_vs_path) + "\\VC\\Tools\\MSVC\\" + vc_version + "\\bin\\" + host + "\\x64";
         }
         else
         {
-            cl_dir = String(g_vs_path) + "\\VC\\Tools\\MSVC\\14.12.25827\\bin\\" + host + "\\x86";
+            cl_dir = String(g_vs_path) + "\\VC\\Tools\\MSVC\\" + vc_version + "\\bin\\" + host + "\\x86";
         }
 
         String temp_vs_obj_name = "temp.vs.obj";
@@ -330,9 +332,9 @@ namespace sgl
         File::WriteAllBytes(temp_fs_obj_name, fs_bin);
 
         exec_cmd(cl_dir, "link.exe", "/dll " + temp_vs_obj_name + " " + temp_fs_obj_name + " /OUT:" + dll_name + ".dll "
-            "/LIBPATH:\"" + g_vs_path + "\\VC\\Tools\\MSVC\\14.12.25827\\lib\\x64\" "
-            "/LIBPATH:\"C:\\Program Files (x86)\\Windows Kits\\10\\lib\\10.0.16299.0\\um\\x64\" "
-            "/LIBPATH:\"C:\\Program Files (x86)\\Windows Kits\\10\\lib\\10.0.16299.0\\ucrt\\x64\"",
+            "/LIBPATH:\"" + g_vs_path + "\\VC\\Tools\\MSVC\\" + vc_version + "\\lib\\x64\" "
+            "/LIBPATH:\"" + win_sdk_lib + "\\um\\x64\" "
+            "/LIBPATH:\"" + win_sdk_lib + "\\ucrt\\x64\"",
             temp_out_name);
 
         String out_text = File::ReadAllText(temp_out_name);

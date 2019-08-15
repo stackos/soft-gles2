@@ -35,12 +35,15 @@ struct Vertex
     Vector4 color;
 };
 
+static const int g_win_width = 720;
+static const int g_win_height = 720;
+
 class Renderer
 {
 public:
     Renderer()
     {
-        glViewport(0, 0, 1280, 720);
+        glViewport(0, 0, g_win_width, g_win_height);
         glClearColor(0, 0, 0, 1);
         glClearDepthf(1);
         glClearStencil(0);
@@ -85,7 +88,7 @@ varying vec2 v_uv;\n\
 varying vec4 v_color;\n\
 void main()\n\
 {\n\
-    gl_FragColor = texture2D(u_tex, v_uv);// * v_color * u_color;\n\
+    gl_FragColor = texture2D(u_tex, v_uv) * v_color * u_color;\n\
 }";
         glShaderSource(fs, 1, (const GLchar* const*) &fs_src, nullptr);
         glCompileShader(fs);
@@ -161,12 +164,12 @@ void main()\n\
 
         glUseProgram(m_program);
 
-        Matrix4x4 model = Matrix4x4::Rotation(Quaternion::Euler(0, m_deg, 0)) * Matrix4x4::Scaling(Vector3(1, 2, 1));
+        Matrix4x4 model = Matrix4x4::Rotation(Quaternion::Euler(0, m_deg, 0)) * Matrix4x4::Scaling(Vector3(1.5f, 3, 1.5f));
         Matrix4x4 view = Matrix4x4::LookTo(
             Vector3(0, 0, -4),
             Vector3(0, 0, 1),
             Vector3(0, 1, 0));
-        Matrix4x4 proj = Matrix4x4::Perspective(60, 1280 / 720.0f, 0.3f, 1000);
+        Matrix4x4 proj = Matrix4x4::Perspective(60, g_win_width / (float) g_win_height, 0.3f, 1000);
         
         Matrix4x4 u_mvp = proj * view * model;
         Vector4 u_color(1, 1, 1, 1);
@@ -213,7 +216,7 @@ void main()\n\
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShowCmd)
 {
-    DisplayWindows* display = new DisplayWindows("soft-gles2", 1280, 720);
+    DisplayWindows* display = new DisplayWindows("soft-gles2", g_win_width, g_win_height);
     Renderer* renderer = new Renderer();
 
     while(display->ProcessSystemEvents())
